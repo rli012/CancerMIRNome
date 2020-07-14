@@ -1,0 +1,633 @@
+
+google.red <- '#EA4335'
+google.yellow <- '#FBBC05'
+google.green <- '#34A853'
+google.blue <- '#4285F4'
+
+google.colors <- c(google.yellow, google.blue, google.red, google.green)
+
+col_fun = colorRampPalette(rev(c(google.red,'white',google.blue)), space = "Lab")(100)
+
+
+#datasets <- read_xlsx('data/PCa_Datasets.xlsx', sheet = 'shiny')
+
+#gene.annotation <- readRDS('data/Annotation/Homo_Sapiens_Gene_Annotation_ENSEMBL_HGNC_ENTREZ.RDS')
+#gene.annotation$alias_symbol <- gsub('"', '', gene.annotation$alias_symbol, fixed=T)
+
+#gene.default <- 'ENSG00000142515' # KLK3
+
+
+
+#dataset <- datasets[1:10,]
+
+#meta.data <- expr.data <- list()
+
+#for (d in dataset$`GEO Accession`) {
+#  print (d)
+  
+#  fl.name <- paste0('shinyApp/', d, '_eSet.RDS')
+  
+#  eSet <- readRDS(fl.name)
+  
+#  expr.data[[d]] <- exprs(eSet)
+#  meta.data[[d]] <- pData(eSet)
+  
+  
+#}
+
+
+
+
+ViolinPlotFun <- function(dataForViolinPlot) {
+  p <- ggplot(dataForViolinPlot, aes(x=group, y=expr)) + 
+    geom_violin(aes(fill=group), size=1) +
+    geom_boxplot(width=0.1, fill="white", size=1, 
+                 outlier.shape = NA, outlier.size = NA) +
+    #scale_color_manual(values=c("#999999", "#E69F00")) +
+    scale_fill_manual(values=c("#E69F00", "#56B4E9")) +
+    #geom_boxplot(aes(fill=sample), width=0.2,
+    #             outlier.shape = NA, outlier.size = NA,#outlier.colour = 'black',
+    #             outlier.fill = NA) +
+    #geom_boxplot(fill='white', width=0.2,
+    #             outlier.shape = NA, outlier.size = NA,#outlier.colour = 'black',
+    #             outlier.fill = NA) +
+    #stat_summary(fun.y=mean, geom="point", shape=23, size=2, color='white', fill='white') +
+    #facet_wrap(~project, nrow=1, scales = 'free') +
+    #geom_jitter(size=0.1, width=0.2) +
+    #ylim(-0.1,3)+
+    xlab('') + ylab(expression('log'[2]*'CPM')) + 
+    #ggtitle(paste0('Expression of ', gene.symbol)) +
+    #guides(fill = guide_legend(nrow=1)) +
+    theme_bw() +
+    theme(legend.position = 'none') +
+    #theme(plot.title = element_text(hjust = 0.5, face='bold', size=16)) +
+    theme(axis.text.y = element_text(size=12,color='black'),
+          axis.text.x = element_text(size=12,color='black', angle = 0, hjust = 0.5),
+          legend.title = element_blank(),
+          legend.text = element_text(size=12),
+          legend.spacing.x = unit(0.1, "cm"),
+          axis.title = element_text(size=14),
+          strip.text = element_text(size=14, face='bold'),
+          panel.border = element_rect(colour = "black"))
+  
+  #p <- p + geom_jitter(size=0.1, width=0.2)
+  
+  return(p)
+  
+}
+
+
+
+tcgaboxplotFun <- function(dataForBoxPlot) {
+  
+  mir.name <- dataForBoxPlot$mir[1]
+  
+  dataForBoxPlot$group <- factor(dataForBoxPlot$group, levels = c('Tumor', 'Normal'))
+  
+  o <- dataForBoxPlot[dataForBoxPlot$group=='Tumor',]
+  o <- o %>% group_by(project) %>%
+    summarise(med=median(expr,na.rm = T))
+
+  o <- o$project[order(o$med, decreasing = T)]
+
+  o <- c(as.character(o), 'TCGA-GBM')
+
+  dataForBoxPlot$project <- factor(dataForBoxPlot$project, levels = o)
+
+  p <- ggplot(dataForBoxPlot, aes(x=project, y=expr, fill=group)) + # fill=interaction(group,project))
+    stat_boxplot(geom ='errorbar', width=0.5, position = position_dodge(width = 0.75))+
+    
+    geom_boxplot(outlier.colour = 'black', outlier.shape = 21,
+                 outlier.fill = NA) +
+    scale_fill_manual(values=c(google.red, google.blue),
+                      labels=c('Tumor', 'Normal'),
+                      name='Sample type') +
+    xlab('')+ylab('Expression value (log2RPM)') + 
+    ggtitle(paste0('Expression of ', mir.name, ' in TCGA')) + 
+    theme_bw()+
+    theme(legend.title = element_blank(),
+          legend.text = element_text(size=14),
+          legend.position = c(0.9, 0.9)) +
+    theme(axis.title=element_text(size=16), 
+          axis.text = element_text(color='black', size=12),
+          axis.text.x = element_text(angle = 45, hjust=1)) +
+    theme(plot.title = element_text(color='black', size=18, face = 'bold', hjust = 0.5)) +
+    #ylim(-10,10) +
+    theme(axis.line = element_line(colour = "black"),
+          #panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_blank(),
+          panel.background = element_blank())
+  
+  return(p)
+  
+}
+
+
+# ============ TO DO ============ #
+tcgarocbarplotFun <- function(dataForBarPlot) {
+  
+  p <- ggplot(data=dataForBarPlot, mapping=aes(x=project, y=auc, fill='darkred')) +
+    geom_bar(stat='identity') +
+    scale_x_discrete(limits=rev(dataForBarPlot$Term),
+                     expand=c(0.05,0)) +
+    scale_y_continuous(position='right', limits = c(0,4), breaks = c(0,1,2,3,4),
+                       expand = c(0, 0)) +
+    #ylim(0, max(-log(keggForPlot$Benjamini,10))) +
+    labs(x='', y=expression('-log'[10]*'(P Value)')) + coord_flip() +
+    #scale_fill_hue(name='',breaks=kegg$Regulation,
+    #               labels=kegg$Regulation) +
+    scale_fill_manual(values = c(google.red, google.blue)) +
+    #geom_text(aes(label=Count), hjust=1, size=4) +
+    theme_bw()+theme(axis.line = element_line(colour = "black"),
+                     panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(),
+                     panel.border = element_rect(colour='white'),
+                     panel.background = element_blank()) +
+    theme(axis.text=element_text(size=12, color='black'),
+          axis.ticks.length = unit(0.2,'cm'),
+          axis.ticks.y=element_blank(),
+          axis.line.y = element_blank(),
+          axis.title.x =element_text(size=14))+#,
+    #axis.title.y = element_text(vjust = -2, hjust=1.1, size=12, angle = 0)) +
+    theme(legend.text = element_text(size=14),
+          legend.title = element_blank(),
+          legend.position = 'none') +
+    theme(plot.margin =  margin(t = 0.25, r = 0.5, b = 0.25, l = 0.25, unit = "cm"))
+  
+  
+  
+}
+
+
+tcgaROCForestplotFun <- function(dataForForestPlot) {
+  
+  mir.name <- dataForForestPlot$mir[1]
+  
+  p <- ggplot(dataForForestPlot, aes(x=Project, y=AUC)) +
+    #geom_segment(aes(y=dataset, x=lower95.coxph, xend=upper95.coxph, yend=dataset), color='black', size=1) +
+    #geom_segment(aes(y=6:1-0.1, x=lower95.coxph, xend=lower95.coxph, yend=6:!+0.1), color='black', size=1) +
+    geom_errorbar(aes(ymin=Lower95, ymax=Upper95),width=0.4, size=0.8, color='black')+ 
+    geom_point(color=google.red, size=3, shape=18) + #shape=15, facet_grid(.~type) +
+    #geom_text(data =dataForForestPlot, aes(x=dataset, y=c(-2.9,-3.12,-1.16,1.2,2.58,2.5), label=P, group=NULL),
+    #          size=4.4) +
+    #geom_text(data =dataForForestPlot, aes(x=dataset, y=c(-6.7,-7.3,-2.6,2.6,6.1,5.9), label=P, group=NULL),
+    #          size=4.4) +
+    geom_hline(yintercept = 0.5, linetype=2) +
+    #geom_text(data =dataForForestPlot, aes(x=dataset, y=c(0.35,0.5,0.2,0.45,0.95,0.55), label=p.coxph, group=NULL),
+    #          size=4.4) +
+    #scale_y_continuous(trans = 'log10',
+    #                   breaks = c(0, 1, 2.5,50,250,7500),
+    #                   labels = c(0, 1, 2.5,50,250,7500)) +
+    coord_flip()+
+    #ylim(0,0.05) +
+    xlab('')+ylab(expression('AUC')) +
+    ggtitle(paste0('ROC Analysis of ', mir.name, ' in TCGA')) +
+    #xlim(0,100) +
+    theme_bw()+
+    #theme_set(theme_minimal()) #
+    theme(legend.title = element_blank(),
+          legend.text = element_text(size=14),
+          legend.position = 'right') +
+    theme(plot.title = element_text(color='black', size=18, face = 'bold', hjust = 0.5)) +
+    theme(axis.title=element_text(size=16),
+          axis.text = element_text(color='black', size=12),
+          axis.text.x = element_text(angle = 0, hjust=0.5),
+          strip.text = element_text(size=14)) +
+    theme(axis.line = element_line(colour = "black"),
+          axis.line.y = element_blank(),
+          panel.border = element_blank(),
+          panel.background = element_blank())
+  
+  return (p)
+  
+}
+
+
+rocplotFun <- function(dataForROCPlot) {
+  
+  roc.test <- roc(dataForROCPlot$group, dataForROCPlot$expr, plot=FALSE, ci=TRUE, auc=TRUE)
+  ci.auc <- roc.test$ci
+  ci.auc
+  auc <- ci.auc[2]
+  auc.ci.lower95 <- ci.auc[1]
+  auc.ci.upper95 <- ci.auc[3]
+  
+  auc <- format(auc, digits = 2, nsmall=2)
+  auc.ci.lower95 <- format(auc.ci.lower95, digits = 2, nsmall=2)
+  auc.ci.upper95 <- format(auc.ci.upper95, digits = 2, nsmall=2)
+  
+  #FPR <- 1-roc.test$specificities
+  #TPR <- roc.test$sensitivities
+  
+  pred <- prediction(dataForROCPlot$expr, dataForROCPlot$group)
+  pred
+  perf <- performance(pred, measure = "tpr", x.measure = "fpr")
+  perf
+  
+  FPR <- perf@x.values[[1]]
+  TPR <- perf@y.values[[1]]
+  #FPR
+  
+  df <- data.frame(FPR,TPR)
+  
+  auc.test <- wilcox.test(FPR, TPR, alternative = 'two.sided')
+  auc.test$p.value
+  pvalue <- formatC(auc.test$p.value, format = 'e', digits = 2)
+  pvalue
+  
+  #p <- ggroc(roc.test, size = 1, alpha = 1,color='red')
+  
+  p <- ggplot(df,aes(x=FPR,y=TPR))+geom_line(size = 1, alpha = 1,color='red')
+  
+  p <- p + 
+    labs(x = "1-Specificity",y = "Sensitivity")+ 
+    #scale_x_continuous(expand=c(0,0))+scale_y_continuous(expand=c(0,0))+
+    geom_abline(intercept = 0, slope = 1) +
+    #geom_segment(x=0,y=0,xend=1,yend=1, color='darkgreen') + xlim(0,1) + ylim(0,1) +
+    theme_bw()+
+    theme(axis.line = element_line(colour = "black"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_rect(colour='black'),
+          panel.background = element_blank()) +
+    theme(axis.text=element_text(size=12, color = 'black'), axis.title=element_text(size=14)) +
+    theme(strip.text.x = element_text(size = 12, colour = "black", angle=0)) +
+    ggplot2::annotate("text", 
+                      x = 0.6, y = 0.125, # x and y coordinates of the text
+                      label = paste('AUC=',auc, ' (95% CI: ',auc.ci.lower95, '-', auc.ci.upper95, ')',sep=''), size = 5) +
+    ggplot2::annotate("text", 
+                      x = 0.6, y = 0.25, # x and y coordinates of the text
+                      label = paste0('P=',pvalue), size = 5)
+  
+  return (p)
+  
+}
+
+
+volcanoPlotFun <- function(dataForVolcanoPlot, logFcThreshold, adjPvalThreshold) {
+  p <- ggplot(dataForVolcanoPlot, aes(x = logFC, y = -log10(adj.P.Val))) +
+    #xlim(-2,2) +
+    labs(x=expression('log'[2]*'(Fold Change)'), 
+         y=(expression('-log'[10]*'(FDR)')), 
+         title=NULL) +
+    geom_point(aes(color=Significance), alpha=1, size=2) +
+    geom_vline(xintercept = c(-logFcThreshold, logFcThreshold),
+               color='darkgreen', linetype='dashed') +
+    geom_hline(yintercept = -log10(adjPvalThreshold), 
+               color='darkgreen',linetype='dashed')+
+    #scale_x_continuous(breaks=c(-4,-2,0,2,4,6,8,10)) +
+    #scale_y_continuous(expand = c(0.3, 0)) +
+    #scale_color_manual(values = c('#4285F4',"gray", '#FBBC05')) +
+    scale_color_manual(values = c(google.green,"gray", google.red)) +
+    #facet_wrap(~Comparison, ncol = 2) +
+    #geom_text_repel(data = subset(dataForVolcanoPlot, 
+    #                              adj.P.Val < adjPvalThreshold & logFC > logFcThreshold), 
+    #                segment.alpha = 0.4, aes(label = Symbol), 
+    #                size = 3.5, color='red', segment.color = 'black') +
+    #geom_text_repel(data = subset(dataForVolcanoPlot, 
+    #                              adj.P.Val < adjPvalThreshold & logFC < logFcThreshold*-1), 
+    #                segment.alpha = 0.4, aes(label = Symbol), 
+    #                size = 3.5, color='green3', segment.color = 'black') +
+    
+    theme_bw() +
+    theme(axis.line = element_blank(),
+          #panel.grid.major = element_blank(),
+          #panel.grid.minor = element_blank(),
+          panel.border = element_blank(),
+          panel.background = element_blank()) +
+    theme(legend.position="none") +
+    theme(axis.text=element_text(size=14),
+          axis.title=element_text(size=16),
+          strip.text = element_text(size=14, face='bold')) +
+    theme(plot.margin =  margin(t = 0.25, r = 0.25, b = 0.25, l = 0.25, unit = "cm"))
+  
+  return (p)
+}
+
+
+corrplotFun <- function(dataForCorrPlot) {
+  
+  dataForCorrPlot$group <- log2(dataForCorrPlot$group+1)
+  
+  corr <- cor.test(dataForCorrPlot$expr, dataForCorrPlot$group)$estimate
+  p <- cor.test(dataForCorrPlot$expr, dataForCorrPlot$group)$p.value
+
+  anno_text <- data.frame(
+    label = paste0('corr = ', round(corr,3), '\n',
+                   'p = ', ifelse(p >= 0.01,
+                                  formatC(p, digits = 2),
+                                  formatC(p, format = "e", digits = 2))),
+    x     = max(dataForCorrPlot$expr),
+    y     = max(dataForCorrPlot$group)
+  )
+  
+  p <- ggplot(data=dataForCorrPlot, aes(x=expr, y=group)) +
+    geom_point(size=1, color='darkred') +
+    geom_smooth(method='lm') +
+    #geom_text(data    = anno_text,
+    #          mapping = aes(x = x, y = y, label = label),
+    #          size=4.5) +
+    #facet_wrap(~platform) +
+    labs(x='Expression Level', y='Preoperative PSA') +
+    theme_bw() +
+    theme(axis.line = element_blank(),
+          #panel.grid.major = element_blank(),
+          #panel.grid.minor = element_blank(),
+          panel.border = element_blank(),
+          panel.background = element_blank()) +
+    theme(legend.position = 'none')+
+    theme(axis.text = element_text(size=14),
+          axis.title = element_text(size=16),
+          strip.text.x = element_text(size=14, face='bold'))
+  
+  return (p)
+  
+}
+
+
+pieplotFun <- function(dataForPiePlot) {
+  
+  o <- order(dataForPiePlot$num, decreasing = T)
+  dataForPiePlot$sam <- factor(dataForPiePlot$sam, levels = dataForPiePlot$sam[o])
+  
+  
+  if (length(dataForPiePlot$sam) <= 10) {
+    p <- ggplot(dataForPiePlot, aes(x = "", y = num, fill = sam)) +
+      geom_bar(width = 1, stat = "identity", color = "white", size=0.5) +
+      scale_fill_manual(values = google.colors) +
+      coord_polar("y", start = 0) + 
+      geom_text(aes(label = num), position = position_stack(vjust = 0.5), size=4.5) +
+      theme_void() +
+      theme(legend.title = element_blank(),
+            legend.position = 'bottom',
+            legend.text = element_text(size=12)) +
+      theme(plot.margin =  margin(t = 0.1, r = 0.1, b = 0.1, l = 0.1, unit = "cm"))
+  } else {
+    p <- ggplot(dataForPiePlot, aes(x = "", y = num, fill = sam)) +
+      geom_bar(width = 1, stat = "identity", color = "white", size=0.5) +
+      #scale_fill_manual(values = google.colors) +
+      coord_polar("y", start = 0) + 
+      guides(fill=guide_legend(ncol=3,byrow=TRUE)) +
+      geom_text(aes(label = num), position = position_stack(vjust = 0.5), size=4.5) +
+      theme_void() +
+      theme(legend.title = element_blank(),
+            legend.position = 'bottom',
+            legend.text = element_text(size=12)) +
+      theme(plot.margin =  margin(t = 0.1, r = 0.1, b = 0.1, l = 0.1, unit = "cm"))
+    
+  }
+
+  return (p)
+}
+
+barplotFun <- function(dataForBarPlot) {
+  
+  p <- ggplot(data=dataForBarPlot, mapping=aes(x=group, y=num, fill=google.blue)) +
+    geom_bar(stat='identity') +
+    scale_x_discrete(limits=dataForBarPlot$group) +
+    labs(x='', y='Number of samples') + 
+    scale_fill_manual(values=c(google.blue)) +
+    theme_bw()+theme(axis.line = element_line(colour = "black"),
+                     #panel.grid.major = element_blank(),
+                     #panel.grid.minor = element_blank(),
+                     panel.border = element_blank(),
+                     panel.background = element_blank()) +
+    theme(axis.text=element_text(size=12, color='black'),
+          axis.text.x = element_text(angle=45, hjust=1),
+          axis.title=element_text(size=14)) +
+    theme(legend.text = element_text(size=12),
+          legend.title = element_blank(),
+          legend.position = 'none') +
+    theme(plot.margin =  margin(t = 0.1, r = 0.1, b = 0.1, l = 0.1, unit = "cm"))
+  
+  return (p)
+}
+
+
+histogramFun <- function(dataForHistogram) {
+
+  p <- ggplot(data=dataForHistogram, aes(log2(preop_psa+1), fill=google.blue)) + 
+    geom_histogram() + 
+    scale_fill_manual(values=c(google.blue)) +
+    labs(x=expression('Log'[2]*'(Preoperative PSA + 1)'), y='Count') +
+    theme_bw()+theme(axis.line = element_line(colour = "black"),
+                     #panel.grid.major = element_blank(),
+                     #panel.grid.minor = element_blank(),
+                     panel.border = element_blank(),
+                     panel.background = element_blank()) +
+    theme(axis.text=element_text(size=12, color='black'),
+          axis.title=element_text(size=14)) +
+    theme(legend.text = element_text(size=12),
+          legend.title = element_blank(),
+          legend.position = 'none') +
+    theme(plot.margin =  margin(t = 0.1, r = 0.1, b = 0.1, l = 0.1, unit = "cm"))
+    
+  return (p)
+  
+  
+}
+
+
+
+
+kmTest <- function(exprDa, daysToDeath, vitalStatus, sep='median') {
+  
+  if(is.vector(exprDa)) {
+    DEG <- exprDa
+    
+    if (sep=='1stQu') {
+      thresh <- as.numeric(summary(DEG)[2])
+    } else if (sep=='median') {
+      thresh <- as.numeric(summary(DEG)[3])
+    } else if (sep=='mean') {
+      thresh <- as.numeric(summary(DEG)[4])
+    } else if (sep=='3rdQu') {
+      thresh <- as.numeric(summary(DEG)[5])
+    }
+    
+    exprGroup <- DEG > thresh
+    
+    sdf <- survdiff(Surv(daysToDeath, vitalStatus) ~ exprGroup)
+    pValue <- format(pchisq(sdf$chisq, length(sdf$n)-1, 
+                            lower.tail = FALSE),digits=3)
+    #p.val = 1 - pchisq(data.survdiff$chisq, length(data.survdiff$n) - 1)
+    
+    HR = (sdf$obs[2]/sdf$exp[2])/(sdf$obs[1]/sdf$exp[1])
+    upper95 = exp(log(HR) + qnorm(0.975)*sqrt(1/sdf$exp[2]+1/sdf$exp[1]))
+    lower95 = exp(log(HR) - qnorm(0.975)*sqrt(1/sdf$exp[2]+1/sdf$exp[1]))
+    
+    kmDEGs <- c(HR, lower95, upper95, pValue)
+    
+  } else {
+    kmDEGs <- c()
+    for (i in seq_len(nrow(exprDa))) {
+      DEG <- unlist(exprDa[i,])
+      
+      if (sep=='1stQu') {
+        thresh <- as.numeric(summary(DEG)[2])
+      } else if (sep=='median') {
+        thresh <- as.numeric(summary(DEG)[3])
+      } else if (sep=='mean') {
+        thresh <- as.numeric(summary(DEG)[4])
+      } else if (sep=='3rdQu') {
+        thresh <- as.numeric(summary(DEG)[5])
+      }
+      
+      exprGroup <- DEG > thresh
+      
+      sdf <- survdiff(Surv(daysToDeath, vitalStatus) ~ exprGroup)
+      pValue <- format(pchisq(sdf$chisq, length(sdf$n)-1, 
+                              lower.tail = FALSE),digits=3)
+      #p.val = 1 - pchisq(data.survdiff$chisq, length(data.survdiff$n) - 1)
+      
+      HR = (sdf$obs[2]/sdf$exp[2])/(sdf$obs[1]/sdf$exp[1])
+      upper95 = exp(log(HR) + qnorm(0.975)*sqrt(1/sdf$exp[2]+1/sdf$exp[1]))
+      lower95 = exp(log(HR) - qnorm(0.975)*sqrt(1/sdf$exp[2]+1/sdf$exp[1]))
+      
+      kmDEGs <- rbind(kmDEGs, c(HR, lower95, upper95, pValue))
+      
+    }
+    
+    rownames(kmDEGs) <- rownames(exprDa)
+    colnames(kmDEGs) <- c('HR','lower95','upper95','pValue')
+    kmDEGs <- data.frame(symbol=ensembl2symbolFun(rownames(exprDa)), kmDEGs)
+    #kmDEGs$FDR <- p.adjust(kmDEGs$pValue, method='fdr')
+    
+    #o <- order(coxphDEGs$pValue)
+    #coxphDEGs <- coxphDEGs[o,]
+    
+  }
+  return (kmDEGs)
+}
+
+
+
+
+
+
+tcgaKMForestplotFun <- function(dataForForestPlot) {
+  
+  mir.name <- dataForForestPlot$mir[1]
+  
+  p <- ggplot(dataForForestPlot, aes(x=Project, y=HR)) +
+    #geom_segment(aes(y=dataset, x=lower95.coxph, xend=upper95.coxph, yend=dataset), color='black', size=1) +
+    #geom_segment(aes(y=6:1-0.1, x=lower95.coxph, xend=lower95.coxph, yend=6:!+0.1), color='black', size=1) +
+    geom_errorbar(aes(ymin=Lower95, ymax=Upper95),width=0.4, size=0.8, color='black')+ 
+    geom_point(color=google.red, size=3, shape=15) + #shape=15, facet_grid(.~type) +
+    #geom_text(data =dataForForestPlot, aes(x=dataset, y=c(-2.9,-3.12,-1.16,1.2,2.58,2.5), label=P, group=NULL),
+    #          size=4.4) +
+    #geom_text(data =dataForForestPlot, aes(x=dataset, y=c(-6.7,-7.3,-2.6,2.6,6.1,5.9), label=P, group=NULL),
+    #          size=4.4) +
+    geom_hline(yintercept = 1, linetype=2) +
+    #geom_text(data =dataForForestPlot, aes(x=dataset, y=c(0.35,0.5,0.2,0.45,0.95,0.55), label=p.coxph, group=NULL),
+    #          size=4.4) +
+    #scale_y_continuous(trans = 'log10',
+    #                   breaks = c(0, 1, 2.5,50,250,7500),
+    #                   labels = c(0, 1, 2.5,50,250,7500)) +
+    coord_flip()+
+    #ylim(0,0.05) +
+    xlab('')+ylab(expression('HR')) +
+    ggtitle(paste0('Kaplan Meier Survival Analysis of ', mir.name, ' in TCGA')) +
+    #xlim(0,100) +
+    theme_bw()+
+    #theme_set(theme_minimal()) #
+    theme(legend.title = element_blank(),
+          legend.text = element_text(size=14),
+          legend.position = 'right') +
+    theme(plot.title = element_text(color='black', size=18, face = 'bold', hjust = 0.5)) +
+    theme(axis.title=element_text(size=16),
+          axis.text = element_text(color='black', size=12),
+          axis.text.x = element_text(angle = 0, hjust=0.5),
+          strip.text = element_text(size=14)) +
+    theme(axis.line = element_line(colour = "black"),
+          axis.line.y = element_blank(),
+          panel.border = element_blank(),
+          panel.background = element_blank())
+  
+  return (p)
+  
+}
+
+
+
+KMPlotFun <- function(dataForKMPlot, sep='median', type='os') {
+  
+  if (sep=='1stQu') {
+    risk.threshold <- as.numeric(summary(dataForKMPlot$expr)[2])
+  } else if (sep=='median') {
+    risk.threshold <- as.numeric(summary(dataForKMPlot$expr)[3])
+  } else if (sep=='mean') {
+    risk.threshold <- as.numeric(summary(dataForKMPlot$expr)[4])
+  } else if (sep=='3rdQu') {
+    risk.threshold <- as.numeric(summary(dataForKMPlot$expr)[5])
+  }
+  
+  dataForKMPlot$risk.group <- dataForKMPlot$expr > risk.threshold
+  
+  if (type == 'os') {
+    x.title <- 'Overall Survival (months)'
+  } else if (group == 'rfs') {
+    x.title <- 'Relapse-free Survival (months)'
+  }  else if (group == 'mfs') {
+    x.title <- 'Metastasis-free Survival (months)'
+  }
+  
+  n.high <- sum(dataForKMPlot$risk.group, na.rm=T)
+  n.low <- sum(!dataForKMPlot$risk.group, na.rm=T)
+  
+  sdf <- survdiff(Surv(dataForKMPlot$os.time, dataForKMPlot$os.status) ~ dataForKMPlot$risk.group)
+  p.val <- pchisq(sdf$chisq, length(sdf$n)-1, lower.tail = FALSE)
+  #p.val = 1 - pchisq(data.survdiff$chisq, length(data.survdiff$n) - 1)
+  
+  hr = (sdf$obs[2]/sdf$exp[2])/(sdf$obs[1]/sdf$exp[1])
+  upper95 = exp(log(hr) + qnorm(0.975)*sqrt(1/sdf$exp[2]+1/sdf$exp[1]))
+  lower95 = exp(log(hr) - qnorm(0.975)*sqrt(1/sdf$exp[2]+1/sdf$exp[1]))
+  
+  hr <- format(hr, digits = 2, nsmall=2)
+  upper95 <- format(upper95, digits = 2, nsmall=2)
+  lower95 <- format(lower95, digits = 2, nsmall=2)
+  
+  p.val <- ifelse(p.val >= 0.01, formatC(p.val, digits = 2), 
+                  formatC(p.val, format = "e", digits = 2))
+  
+  label.hr <- paste('HR = ', hr, ' (', lower95, ' - ', upper95, ')', sep='')
+  label.p <- paste('P Value = ', p.val, sep='')
+  
+  fit <- survfit(Surv(os.time, os.status) ~ risk.group, data=dataForKMPlot)
+  
+  lgd.xpos <- 0.27
+  lgd.ypos = 0.3
+  
+  p.xpos = max(dataForKMPlot$os.time, na.rm=TRUE)/25
+  p.ypos = 0.07
+  
+  #title <- 'PFR10YR'
+  #type <- 'Relapse-free Survival'
+  
+  plt <- ggsurvplot(fit, data=dataForKMPlot, pval = paste0(label.hr, '\n', label.p), pval.coord = c(p.xpos, p.ypos),
+                    pval.size=5.5,
+                    font.main = c(16, 'bold', 'black'), conf.int = FALSE, 
+                    #title = title,
+                    legend = c(lgd.xpos, lgd.ypos), 
+                    #color = c('blue', 'green'),
+                    palette= c(google.blue, google.red),
+                    legend.labs = c(paste('Low Expression (N=',n.low,')',sep=''), 
+                                    paste('High Expression (N=',n.high,')',sep='')),  
+                    legend.title='Group',
+                    xlab = x.title, ylab = 'Survival probability',
+                    font.x = c(20), font.y = c(20), ylim=c(0,1), #16
+                    ggtheme = theme_bw()+ theme(axis.line = element_line(colour = "black"),
+                                                panel.grid.major = element_blank(),
+                                                panel.grid.minor = element_blank(),
+                                                #panel.border = element_rect(colour='black'),
+                                                panel.border = element_blank(),
+                                                panel.background = element_blank(),
+                                                legend.text = element_text(size=16),#14
+                                                legend.title = element_text(size=16),
+                                                #axis.title = element_text(size=30),
+                                                axis.text = element_text(size=18, color='black')))
+  
+  return(plt[[1]])
+  
+}
