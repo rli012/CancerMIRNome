@@ -631,3 +631,110 @@ KMPlotFun <- function(dataForKMPlot, sep='median', type='os') {
   return(plt[[1]])
   
 }
+
+
+ExprCorrPlotFun <- function(dataForCorrPlot) {
+  
+  xpos <- (min(dataForCorrPlot$mir.expr)+max(dataForCorrPlot$mir.expr))/2
+  ypos <- as.numeric(summary(dataForCorrPlot$rna.expr)[6])+0.5
+  
+  coef <- dataForCorrPlot$coef[1]
+  p.val <- dataForCorrPlot$p.val[1]
+  mir.id <- dataForCorrPlot$mir.id[1]
+  mir.name <- dataForCorrPlot$mir.name[1]
+  target.id <- dataForCorrPlot$target.id[1]
+  target.name <- dataForCorrPlot$target.name[1]
+  
+  
+  p <- ggplot(dataForCorrPlot, aes(x=mir.expr, y=rna.expr)) + 
+    geom_point(aes(color=group), size=2) + # shape=group, 
+    xlab(paste(mir.id,' (',mir.name,')',sep='')) +
+    ylab(paste(target.id,' (',target.name,')',sep='')) + 
+    geom_smooth(method="lm",col='darkgreen', size=2) + # 
+    scale_colour_manual(breaks = dataForCorrPlot$group, 
+                        values = c('darkblue', 'darkred')) +
+    ggplot2::annotate("text", x = xpos, y = ypos, 
+                      label = paste('R = ', coef, ', P = ', p.val, sep=''), size = 5) +
+    theme_bw() +
+    #theme(legend.position = 'none') +
+    #theme(plot.title = element_text(hjust = 0.5, face='bold', size=16)) +
+    theme(axis.text.y = element_text(size=12,color='black'),
+          axis.text.x = element_text(size=12,color='black', angle = 0, hjust = 0.5),
+          legend.title = element_blank(),
+          legend.text = element_text(size=12),
+          legend.spacing.x = unit(0.1, "cm"),
+          axis.title = element_text(size=14),
+          #strip.text = element_text(size=14, face='bold'),
+          panel.border = element_rect(colour = "black"))
+  
+  return(p)
+
+}
+
+EnrichmentBarPlotFun <- function(dataForBarPlot) {
+  
+  p <- ggplot(data=dataForBarPlot, mapping=aes(x=Description, y=-log10(BH.Adj.P), fill='chocolate')) + 
+    geom_bar(stat='identity') +
+    scale_x_discrete(limits=rev(dataForBarPlot$Description)) +
+    ylim(0, max(-log10(dataForBarPlot$BH.Adj.P))) +
+    labs(x='', y=expression('-log'[10]*'(BH Adjusted P)')) + coord_flip() +
+    #scale_fill_hue(name='',breaks=kegg$Regulation,
+    #               labels=kegg$Regulation) +
+    #scale_fill_manual(values = c('orange','dodgerblue')) +
+    scale_fill_manual(values=c('chocolate'))+#,breaks=kegg$Reg) +
+    #geom_text(aes(label=Count), hjust=1, size=4.5) +
+    theme_bw()+theme(axis.line = element_line(colour = "black"),
+                     panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(),
+                     panel.border = element_rect(colour='white'),
+                     panel.background = element_blank()) +
+    theme(axis.text=element_text(size=14, color='black'),
+          axis.title=element_text(size=16)) +
+    theme(legend.text = element_text(size=14),
+          legend.title = element_blank(),
+          legend.position = 'none')
+  
+  return (p)
+  
+  
+}
+
+
+EnrichmentBubblePlotFun <- function(dataForBubblePlot) {
+  
+  p <- ggplot(dataForBubblePlot, mapping=aes(x=Description, y=Fold.Enrichment, #y=-log10(Benjamini), #y=Fold.Enrichment
+                                        color=BH.Adj.P,size=Count)) +
+    geom_point()+ coord_flip() +
+    scale_x_discrete(limits=rev(unique(dataForBubblePlot$Description))) +
+    #scale_x_discrete(limits=Order)+
+    scale_colour_gradientn(limits=c(0,0.05),
+                           colors= c("red","yellow","green")) + #
+    #facet_wrap(~Comparison) +
+    #facet_grid(Regulation~Comparison) + # scales=free
+    xlab('')+ylab('Fold Enrichment') + #ggtitle("") + 
+    guides(shape = guide_legend(order=1),
+           colour = guide_colourbar(order=2, title = 'BH Adjusted P')) + #'P Value\n(Benjamini)'))
+    theme_bw()+theme(axis.line = element_line(colour = "black"),
+                     panel.grid.minor = element_blank(),
+                     panel.border = element_rect(colour='black'),
+                     panel.background = element_blank()) +
+    theme(plot.title = element_text(hjust = 0.5, size=20)) +
+    theme(axis.text=element_text(size=14, color='black'),
+          axis.text.x =element_text(size=14, color='black', angle=0, hjust=0.5),
+          axis.title=element_text(size=15)) +
+    theme(legend.text = element_text(size = 14),
+          legend.title = element_text(size = 14)) +
+    theme(#strip.text = element_text(size = 14),
+          legend.key.size = unit(0.8,'cm'))
+  
+  
+  return (p)
+  
+}
+
+
+
+
+
+
+
