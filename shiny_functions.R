@@ -38,6 +38,7 @@ col_fun = colorRampPalette(rev(c(google.red,'white',google.blue)), space = "Lab"
 
 
 
+
 ViolinPlotFun <- function(dataForViolinPlot) {
   p <- ggplot(dataForViolinPlot, aes(x=group, y=expr)) + 
     geom_violin(aes(fill=group), size=1) +
@@ -75,7 +76,6 @@ ViolinPlotFun <- function(dataForViolinPlot) {
   return(p)
   
 }
-
 
 
 tcgaboxplotFun <- function(dataForBoxPlot) {
@@ -736,5 +736,63 @@ EnrichmentBubblePlotFun <- function(dataForBubblePlot) {
 
 
 
+CircViolinPlotFun <- function(dataForViolinPlot) {
+  p <- ggplot(dataForViolinPlot, aes(x=group, y=expr)) + 
+    geom_violin(aes(fill=group), size=1) +
+    geom_boxplot(width=0.1, fill="white", size=1, 
+                 outlier.shape = NA, outlier.size = NA) +
+    #scale_color_manual(values=c("#999999", "#E69F00")) +
+    #scale_fill_manual(values=c("#E69F00", "#56B4E9")) +
+    #geom_boxplot(aes(fill=sample), width=0.2,
+    #             outlier.shape = NA, outlier.size = NA,#outlier.colour = 'black',
+    #             outlier.fill = NA) +
+    #geom_boxplot(fill='white', width=0.2,
+    #             outlier.shape = NA, outlier.size = NA,#outlier.colour = 'black',
+    #             outlier.fill = NA) +
+    #stat_summary(fun.y=mean, geom="point", shape=23, size=2, color='white', fill='white') +
+    facet_wrap(~dataset, nrow=1, scales = 'free') +
+    #geom_jitter(size=0.1, width=0.2) +
+    #ylim(-0.1,3)+
+    xlab('') + ylab(expression('log'[2]*'(Intensity)')) + 
+    #ggtitle(paste0('Expression of ', gene.symbol)) +
+    #guides(fill = guide_legend(nrow=1)) +
+    theme_bw() +
+    theme(legend.position = 'none') +
+    #theme(plot.title = element_text(hjust = 0.5, face='bold', size=16)) +
+    theme(axis.text.y = element_text(size=12,color='black'),
+          axis.text.x = element_text(size=12,color='black', angle = 45, hjust = 1),
+          legend.title = element_blank(),
+          legend.text = element_text(size=12),
+          legend.spacing.x = unit(0.1, "cm"),
+          axis.title = element_text(size=14),
+          strip.text = element_text(size=14, face='bold'),
+          panel.border = element_rect(colour = "black"))
+  
+  #p <- p + geom_jitter(size=0.1, width=0.2)
+  
+  return(p)
+  
+}
+
+######################
+
+plot_overlay_ui <- function(id, height, width) {
+  ns <- NS(id)
+  tagList(
+    plotOutput(ns("my_plot"), height=height, width=width)
+  )
+}
 
 
+plot_overlay_server <- function(input,
+                                output,
+                                session, 
+                                dataForViolinPlot) {
+  
+  output$my_plot <- renderPlot({
+    
+    p <- CircViolinPlotFun(dataForViolinPlot)
+    p
+    
+  })
+}
