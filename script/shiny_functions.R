@@ -1,10 +1,46 @@
 
-google.red <- '#EA4335'
-google.yellow <- '#FBBC05'
-google.green <- '#34A853'
-google.blue <- '#4285F4'
+library(RColorBrewer)
 
-google.colors <- c(google.yellow, google.blue, google.red, google.green)
+google.red <- '#ea4235'
+google.yellow <- '#fabd03'
+google.green <- '#34a853'
+google.blue <- '#4286f5'
+
+google.colors <- c(google.blue, google.yellow, google.red, google.green)
+
+#dark2 <- brewer.pal(8, 'Dark2')[c(2:3,1,4,7,8,5)]
+# set1 <- brewer.pal(9, 'Set1')[6:9]
+# set3 <- brewer.pal(12, 'Set3')[-c(6,9,11)]
+# 
+# default.colors <- c('#2b6aca','#db3d10','#f89c05','#189413',
+#                     '#9f0094','#049bbe','#d3497e','#69ac00',
+#                     '#bb2d2b','#3a6194','#954697','#27a59c',
+#                     '#aba917','#6a32c5','#e57202','#8b0509',
+#                     '#621459','#2f9463','#5275a1','#393fb0')
+# 
+# pie.colors <- c(google.colors, default.colors[5:20], set1, set3)
+
+
+default.colors <- c('#3266cc','#dc3812','#fe9900','#109619','#990099',
+                    '#0099c5','#dd4578','#66aa00','#b82e2e','#316394',
+                    '#994499','#21aa98','#aaab12','#6633cc','#e67300',
+                    '#329262','#5474a5','#3c3ead','#8b0607','#641066',
+                    '#f8756b','#e76af2','#02b0f7','#02bf7d','#8c564a',
+                    '#e377c2','#9467bc','#7f7f7f','#bcbd23','#17bed0',
+                    '#aec6e8','#ffbc78','#97df89','#ff9897','#c4b0d5',
+                    '#c49c94','#f7b7d2','#dadb8d','#9edae5','#ffed6f')
+
+pie.colors <- c(google.colors, default.colors[c(5:20,4,21:23,25:40)])
+
+# df.color <- data.frame(x=1:length(pie.colors),
+#                        y=1:length(pie.colors),
+#                        color=pie.colors,
+#                        stringsAsFactors = F)
+# 
+# ggplot(df.color, aes(x, y)) +
+#   geom_point(size=5, color=df.color$color) +
+#   scale_color_manual(values=pie.colors)
+
 
 col_fun = colorRampPalette(rev(c(google.red,'white',google.blue)), space = "Lab")(100)
 
@@ -350,36 +386,48 @@ pieplotFun <- function(dataForPiePlot) {
   
   o <- order(dataForPiePlot$num, decreasing = T)
   dataForPiePlot$sam <- factor(dataForPiePlot$sam, levels = dataForPiePlot$sam[o])
+
+  p <- ggplot(dataForPiePlot, aes(x = "", y = num, fill = sam)) +
+    geom_bar(width = 1, stat = "identity", color = "white", size=0.5) +
+    scale_fill_manual(values = pie.colors) +
+    coord_polar("y", start = 0) + 
+    geom_text(aes(label = num), position = position_stack(vjust = 0.5), size=4.5) +
+    theme_void() +
+    theme(legend.title = element_blank(),
+          legend.position = 'bottom',
+          legend.text = element_text(size=12)) +
+    theme(plot.margin =  margin(t = 0.1, r = 0.1, b = 0.1, l = 0.1, unit = "cm"))
   
-  
-  if (length(dataForPiePlot$sam) <= 10) {
-    p <- ggplot(dataForPiePlot, aes(x = "", y = num, fill = sam)) +
-      geom_bar(width = 1, stat = "identity", color = "white", size=0.5) +
-      scale_fill_manual(values = google.colors) +
-      coord_polar("y", start = 0) + 
-      geom_text(aes(label = num), position = position_stack(vjust = 0.5), size=4.5) +
-      theme_void() +
-      theme(legend.title = element_blank(),
-            legend.position = 'bottom',
-            legend.text = element_text(size=12)) +
-      theme(plot.margin =  margin(t = 0.1, r = 0.1, b = 0.1, l = 0.1, unit = "cm"))
-  } else {
-    p <- ggplot(dataForPiePlot, aes(x = "", y = num, fill = sam)) +
-      geom_bar(width = 1, stat = "identity", color = "white", size=0.5) +
-      #scale_fill_manual(values = google.colors) +
-      coord_polar("y", start = 0) + 
-      guides(fill=guide_legend(ncol=3,byrow=TRUE)) +
-      geom_text(aes(label = num), position = position_stack(vjust = 0.5), size=4.5) +
-      theme_void() +
-      theme(legend.title = element_blank(),
-            legend.position = 'bottom',
-            legend.text = element_text(size=12)) +
-      theme(plot.margin =  margin(t = 0.1, r = 0.1, b = 0.1, l = 0.1, unit = "cm"))
-    
-  }
 
   return (p)
 }
+
+
+
+piePlotlyFun <- function(dataForPiePlot) {
+  
+  o <- order(dataForPiePlot$num, decreasing = T)
+  dataForPiePlot <- dataForPiePlot[o,]
+  
+  p <- plot_ly(dataForPiePlot, labels = ~sam, values = ~num, type = 'pie',
+          textposition = 'inside',
+          textinfo = 'label+value',
+          insidetextfont = list(color = '#FFFFFF'),
+          hoverinfo = 'text',
+          text = ~paste0(sam, '\n', num),
+          marker = list(colors = pie.colors,
+                        line = list(color = '#FFFFFF', width = 1)),
+          #The 'pull' attribute can also be used to create space between the sectors
+          showlegend = FALSE, height=400, width = 400)
+
+  # p <- p %>% layout(legend = list(orientation = 'h'))
+  # p <- p %>% layout(legend = list(x=100, y=0.5))
+  
+  p
+  
+}
+
+
 
 barplotFun <- function(dataForBarPlot) {
   
