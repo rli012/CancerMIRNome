@@ -219,3 +219,112 @@ enrichment.table <- readRDS('shinyApp/data/Enrichment.miRTarBase.RDS')
 
 expr.ccma <- readRDS('shinyApp/data/miRNomes_Expression.RDS')
 meta.ccma <- readRDS('shinyApp/data/miRNomes_Metadata.RDS')
+
+tab_query <- dashboardPage(
+  
+  dashboardHeader(disable = T), 
+  dashboardSidebar(disable = T), 
+  
+  
+  dashboardBody(fluidRow(
+    box(
+      title = NULL, status = "primary", solidHeader = FALSE, collapsible = FALSE,
+      width = 12,
+      
+      column(3),
+      column(3, mir.id), #br(), 
+      column(6,
+             strong(uiOutput("mir.name")),
+             h5(strong(textOutput("mir.preid"))),
+             h5(strong(textOutput("mir.info"))),
+             h5(strong(textOutput("mir.seq"))),
+             h5(strong(uiOutput("mir.targets")))
+      )
+      
+    ),
+    
+    
+    #tabBox(id = 'query', width = 12,
+    box(
+      title = NULL, status = "success", solidHeader = FALSE, collapsible = FALSE,
+      width = 12,
+      
+      #navlistPanel
+      tabsetPanel(id = 'query', type='pills', #widths = c(2,10), 
+                  
+                  
+                  tabPanel(strong("Overview in TCGA"), #tags$p(strong("Overview in TCGA"), style = "font-size: 150%;")
+                           column(2),
+                           
+                           column(8,
+                                  br(),
+                                  withSpinner(plotOutput('tcga_boxplot',width = 1000, height = 500),
+                                              type = 1),
+                                  br(),
+                                  withSpinner(plotOutput('tcga_rocplot_forest',width = 1000, height = 500),
+                                              type = 1),
+                                  br(),
+                                  withSpinner(plotOutput('tcga_km_forest',width = 1000, height = 600),
+                                              type = 1)
+                           ),
+                           
+                           column(2)
+                  ),
+                  
+                  
+                  tabPanel(strong('miRNA in TCGA'),
+                           br(),
+                           project.id,
+                           hr(),
+                           
+                           column(4,
+                                  plotOutput('tcga_violinplot',width = 400, height = 400)
+                           ),
+                           
+                           column(4,
+                                  plotOutput('tcga_rocplot',width = 400, height = 400)
+                           ),
+                           
+                           column(4,
+                                  plotOutput('tcga_km_plot',width = 500, height = 400)
+                           )
+                  ),
+                  
+                  tabPanel(strong("miRNA-Target Correlation"),
+                           column(12,
+                                  br(),
+                                  project.id.cor,
+                                  hr(),
+                                  column(6, br(), DT::dataTableOutput("correlation")),
+                                  column(1),
+                                  column(5, br(), plotOutput('cor_plot',width = 500, height = 400))
+                           )
+                  ),
+                  
+                  tabPanel(strong('Functional Enrcichment Analysis'),
+                           br(),
+                           geneset.id,
+                           hr(),
+                           
+                           column(12, br(), DT::dataTableOutput("enrichment")),
+                           column(6, br(), plotOutput('enrichment_bar_plot',width = 800, height = 500)),
+                           column(6, br(), plotOutput('enrichment_bubble_plot',width = 800, height = 500))
+                  ),
+                  
+                  tabPanel(strong('Circulating miRNA'),
+                           br(),
+                           DT::dataTableOutput("browser_datasets"),
+                           hr(),
+                           column(2),
+                           #uiOutput('circ_tabs'),
+                           #column(11, uiOutput('plot.ui'))
+                           column(8, withSpinner(uiOutput("multi_plot_ui"),type=1)),
+                           column(2)
+                           #plotOutput('mir_boxplot') # ,width = 400, height = 400
+                  )
+                  
+      )
+    )
+  )
+  )
+)
