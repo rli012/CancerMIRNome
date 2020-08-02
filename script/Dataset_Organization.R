@@ -219,3 +219,40 @@ tcga
 
 saveRDS(tcga, file='shinyApp/data/TCGA_Projects.RDS')
 
+
+
+###############################################
+
+#### Additional clinical data
+
+meta.tcga <- readRDS('shinyApp/data/Metadata_TCGA.RDS')
+
+for (prj in names(meta.tcga)) {
+  meta <- meta.tcga[[prj]]
+  
+  if (prj=='TCGA-PRAD') {
+    
+    prad <- readRDS('shinyApp/data/fromTCGA/Clinical_TCGA_PRAD_With_PreopPSA_and_BCR.RDS')
+    
+    samples <- intersect(rownames(prad), rownames(meta))
+    meta$gleason_score <- meta$preop_psa <- NA
+    
+    meta[samples,]$gleason_score <- paste0(prad[samples,]$gleason_score, ' (', prad[samples,]$primary_pattern,
+                                           '+', prad[samples,]$secondary_pattern, ')')
+    
+    meta[samples,]$preop_psa <- prad[samples,]$preop_psa
+    
+  } else {
+
+    meta$preop_psa <- meta$gleason_score <- NA
+    
+  }
+  
+  meta[is.na(meta)] <- 'NA'
+  meta.tcga[[prj]] <- meta
+  
+}
+
+
+saveRDS(meta.tcga, 'shinyApp/data/Metadata_TCGA.RDS')
+
