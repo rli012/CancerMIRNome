@@ -1,5 +1,7 @@
 
 setwd('~/miRNomes/')
+####
+library(cowplot)
 
 meta.tcga <- readRDS('shinyApp/data/Metadata_TCGA.RDS')
 mir.tcga <- readRDS('shinyApp/data/miRNA_Expression_TCGA.RDS')
@@ -120,7 +122,7 @@ for (prj in projects) {
     colnames(feature) <- c('miRNA.Accession','miRNA.ID','Coefficient')
     
     lasso.list[[prj]] <- feature
-    plot.cvfit.list[[prj]] <- plot(1,1)
+    plot.cvfit.list[[prj]] <- 0
     
     next
   }
@@ -148,21 +150,22 @@ for (prj in projects) {
     y <- y[-filter,]
   }
   
-  cvfit<-cv.glmnet(x=x,y=y, family='cox', alpha=1)
+  set.seed(777)
+  cvfit<-cv.glmnet(x=x,y=y, family='cox', alpha=1, standardize=FALSE)
 
-  plot.cvfit.list[[prj]] <- plot(cvfit)
+  plot.cvfit.list[[prj]] <- cvfit
   
   coef.min<-coef(cvfit,s="lambda.min")
   
   #active.min <- which(as.numeric(coef.min) !=0)
   #lasso.genes <- coef.min@Dimnames[[1]][active.min]
   
-  feature <- data.frame(coef.min@Dimnames[[1]],matrix(coef.min))
+  feature <- data.frame(coef.min@Dimnames[[1]],matrix(coef.min), stringsAsFactors = F)
   colnames(feature) <- c('miRNA.Accession','Coefficent')
   
   keep <- which(feature$Coefficent!=0)
   feature <- feature[keep,]
-  feature <- feature[-1,]
+  #feature <- feature[-1,]
   
   feature <- data.frame(miRNA.Accession=feature$miRNA.Accession,
                         miRNA.ID=mir.annotation[feature$miRNA.Accession,]$Name,
@@ -175,4 +178,181 @@ for (prj in projects) {
 }
 
 
+
+#plot(0,type='n',axes=FALSE,ann=FALSE)
+
+saveRDS(lasso.list, file='Survival.Lasso.Feature.TCGA.RDS')
+saveRDS(plot.cvfit.list, file='Survival.Lasso.Plot.TCGA.RDS')
+
+
+risk.km.plot.list <- list()
+
+for (prj in projects) {
+  
+  message(prj)
+  
+  coef <- lasso.list[[prj]]
+  
+  expr <- mir.tcga[[prj]]
+  meta <- meta.tcga[[prj]]
+  
+  samples <- which(meta$sample_type=='Tumor')
+  expr <- expr[,samples]
+  meta <- meta[samples,]
+  
+  os.time <- as.numeric(meta$OS.time)/30
+  os.time[os.time==0] <- 0.001
+  os.status <- as.numeric(meta$OS)
+  
+  if (nrow(coef) == 0) {
+    p <- ggplot()
+  } else {
+    
+    mir <- coef$miRNA.Accession
+    
+    expr <- expr[mir,]
+    coef <- coef$Coefficent
+    
+    if (length(coef)==1) {
+      risk.score <- coef*expr
+    } else {
+      risk.score <- as.numeric(apply(expr, 2, function(v) sum(v*coef)))
+    }
+    
+    risk.threshold <- as.numeric(summary(risk.score)[3])
+    
+    risk.group <- risk.score > risk.threshold
+    
+    dataForKMPlot <- data.frame(expr=risk.score, os.time, os.status)
+    
+    p <- KMRiskPlotFun(dataForKMPlot)
+    
+  }
+
+  risk.km.plot.list[[prj]] <- p
+
+}
+
+saveRDS(risk.km.plot.list, file='Survival.KM.Risk.Plot.TCGA.RDS')
+
+
+
+
+
+risk.three.plot.list <- list()
+
+for (prj in projects) {
+  
+  message(prj)
+  
+  coef <- lasso.list[[prj]]
+  
+  expr <- mir.tcga[[prj]]
+  meta <- meta.tcga[[prj]]
+  
+  samples <- which(meta$sample_type=='Tumor')
+  expr <- expr[,samples]
+  meta <- meta[samples,]
+  
+  os.time <- as.numeric(meta$OS.time)/30
+  os.time[os.time==0] <- 0.001
+  os.status <- as.numeric(meta$OS)
+  
+  if (nrow(coef) == 0) {
+    p <- ggplot()
+  } else {
+    
+    mir <- coef$miRNA.Accession
+    
+    expr <- expr[mir,]
+    coef <- coef$Coefficent
+    
+    if (length(coef)==1) {
+      risk.score <- coef*expr
+    } else {
+      risk.score <- as.numeric(apply(expr, 2, function(v) sum(v*coef)))
+    }
+    
+    ###
+    sam <- order(risk.score)
+    riskPlot <- risk.score[sam]
+    riskThresh <- median(risk.score)
+    
+    
+    ### os and risk plot
+    osPlot <- os.time[sam]
+    
+    vital <- os.status[sam]
+    vital <- ifelse(vital==0,'Alive','Dead')
+    vital <- factor(vital)
+    
+    ### expression plot
+    exprPlot <- data.frame(expr[mir.id,sam], stringsAsFactors = F)
+    rownames(exprPlot) <- mir.name
+    exprPlot <- apply(exprPlot,1,function(x) scale(x))
+    
+    #exprPlot <- data.frame(expr = as.numeric(t(exprPlot)), gene = rep(sixGSymbol,each=length(xLoc)))
+    #exprPlot
+    
+    xLoc <- 1:length(riskPlot)
+    dotDa <- data.frame(xLoc, riskPlot, osPlot,vital)
+    
+    exprDa <- data.frame(xLoc = rep(xLoc,length(mir.id)),expr = as.numeric(t(exprPlot)),
+                         gene=factor(rep(mir.name,each=length(xLoc)), levels=mir.name))
+    
+    
+    ### riskplot
+    riskplt <- ggplot(data=dotDa, aes(x=xLoc, y=riskPlot))
+    p1 <- riskplt+geom_point(color='darkgreen',size=0.8) + labs(x= '', y='Value of risk score') +
+      geom_vline(xintercept = max(as.numeric(which(riskPlot<riskThresh))), linetype=3) + theme(legend.position='none') +
+      theme_bw() +
+      theme(axis.line = element_line(colour = "black"),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            panel.border = element_blank(),
+            panel.background = element_blank()) +
+      theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+            axis.text.y=element_text(size=10),axis.title=element_text(size=12)) + 
+      theme(axis.title.y = element_text(margin = unit(c(0, -10, 0, 0), "mm")))
+    #+ geom_smooth(color='black')
+
+    
+    ###
+    osplt <- ggplot(data=dotDa, aes(x=xLoc, y=osPlot))
+    p2 <- osplt+geom_point(aes(color=vital),size=0.8) + labs(x='', y='Overall survival (days)') + 
+      geom_vline(xintercept = max(as.numeric(which(riskPlot<riskThresh))), linetype=3) + theme(legend.title = element_blank())+
+      theme_bw() +
+      theme(axis.line = element_line(colour = "black"),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            panel.border = element_blank(),
+            panel.background = element_blank()) +
+      theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+            axis.text.y=element_text(size=10), legend.text =element_text(size=10),
+            axis.title=element_text(size=12)) + theme(legend.position=c(0.95,0.95)) +
+      theme(axis.title.y = element_text(margin = unit(c(0, -10, 0, 0), "mm"))) +
+      theme(legend.title=element_blank())
+    #theme(axis.title.y=element_text(vjust=-10))
+    
+    exprplt <- ggplot(data=exprDa, aes(x=xLoc, y=gene, fill=expr))
+    p3 <- exprplt+geom_tile() + scale_fill_gradientn(colours=redblue(10), values=c(1, .6, .5, .4, 0), 
+                                                     limits=c(-10, 10), breaks=c(-10,10),labels=c('low','high')) +
+      #scale_fill_gradient(high='coral1', low='dodgerblue4', limits=c(-2,2), breaks=c(-2,2),labels=c('low','high'))+
+      labs(x="", y="") + theme_bw() + theme(panel.grid=element_blank(), panel.border=element_blank()) +
+      theme(legend.position='bottom', legend.title = element_blank()) + theme(legend.key.size=unit(0.2, "cm")) +
+      theme(legend.key.width=unit(2.5, "cm")) +
+      scale_y_discrete(limits = rev(levels(exprDa$gene)))  +
+      theme(axis.text.x = element_blank(), axis.ticks = element_blank())
+    
+    
+    
+    p <- plot_grid(p2, p1, p3, ncol=1, align="v")
+    p
+    
+    
+  }
+  
+  risk.km.plot.list[[prj]] <- p
+  
+}
 
