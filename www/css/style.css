@@ -1,1 +1,78 @@
 
+hr {
+    border-top: 1px solid #A9A9A9;
+
+}
+
+hr.new1 {
+    border-top: 1px dashed #A9A9A9;
+}
+
+
+h4, .h4 {
+    font-size: 20px;
+}
+
+h5, .h5 {
+    font-size: 18px;
+}
+
+h6, .h6 {
+    font-size: 16px;
+}
+
+.selectize-input {
+    border: 2px solid #9edae5;
+    font-size: 18px; 
+    line-height: 18px;
+}
+
+
+.selectize-dropdown {
+    font-size: 16px;
+    line-height: 18px;
+}
+
+
+.navbar-default {
+    margin-left: 2px;
+    margin-right: 18px;
+    margin-top: -2px;
+}
+
+.navbar-nav {
+    padding-left: 100px;
+    font-size: 24px;
+}
+
+
+.nav.nav-tabs {
+    background-color: #e7edf5;
+    font-size: 18px;
+}
+
+.nav.nav-tabs > .active {
+    font-size: 18px;
+}
+
+
+
+.nav.nav-pills {
+    background-color: #e7edf5;
+    font-size: 18px;
+}
+
+.nav.nav-pills > .active {
+    font-size: 18px;
+}
+
+
+
+.nav.nav-pills.nav-stacked {
+    background-color: #e7edf5;
+    font-size: 18px;
+}
+
+.nav.nav-pills.nav-stacked > .active {
+    font-size: 18px;
+}
