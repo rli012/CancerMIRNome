@@ -92,18 +92,19 @@ ViolinPlotFun <- function(dataForViolinPlot) {
     #facet_wrap(~project, nrow=1, scales = 'free') +
     #geom_jitter(size=0.1, width=0.2) +
     #ylim(-0.1,3)+
-    xlab('') + ylab(expression('log'[2]*'CPM')) + 
+    xlab('Sample Type') + ylab(expression(bold('miRNA Level (log'["2"]*'CPM)'))) + #ylab('log2CPM') +#
     #ggtitle(paste0('Expression of ', gene.symbol)) +
     #guides(fill = guide_legend(nrow=1)) +
     theme_bw() +
     theme(legend.position = 'none') +
     #theme(plot.title = element_text(hjust = 0.5, face='bold', size=16)) +
-    theme(axis.text.y = element_text(size=12,color='black'),
-          axis.text.x = element_text(size=12,color='black', angle = 0, hjust = 0.5),
+    theme(axis.text.y = element_text(size=12,color='black', face='bold'),
+          axis.text.x = element_text(size=12,color='black', 
+                                     angle = 0, hjust = 0.5, face='bold'),
           legend.title = element_blank(),
           legend.text = element_text(size=12),
           legend.spacing.x = unit(0.1, "cm"),
-          axis.title = element_text(size=14),
+          axis.title = element_text(size=16, face='bold'),
           strip.text = element_text(size=14, face='bold'),
           panel.border = element_rect(colour = "black"))
   
@@ -138,16 +139,16 @@ tcgaboxplotFun <- function(dataForBoxPlot) {
     scale_fill_manual(values=c(google.red, google.blue),
                       labels=c('Tumor', 'Normal'),
                       name='Sample type') +
-    xlab('')+ylab('Expression value (log2RPM)') + 
-    ggtitle(paste0('Expression of ', mir.name, ' in TCGA')) + 
+    xlab('')+ylab(expression(bold('miRNA Level (log'["2"]*'CPM)'))) + 
+    #ggtitle(paste0('Expression of ', mir.name, ' in TCGA')) + 
     theme_bw()+
     theme(legend.title = element_blank(),
           legend.text = element_text(size=14),
           legend.position = c(0.9, 0.9)) +
-    theme(axis.title=element_text(size=16), 
-          axis.text = element_text(color='black', size=12),
-          axis.text.x = element_text(angle = 45, hjust=1)) +
-    theme(plot.title = element_text(color='black', size=18, face = 'bold', hjust = 0.5)) +
+    theme(axis.title=element_text(size=16, face = 'bold'), 
+          axis.text = element_text(color='black', size=12, face='bold'),
+          axis.text.x = element_text(angle = 45, hjust=1, face='bold')) +
+    #theme(plot.title = element_text(color='black', size=18, face = 'bold', hjust = 0.5)) +
     #ylim(-10,10) +
     theme(axis.line = element_line(colour = "black"),
           #panel.grid.major = element_blank(),
@@ -170,7 +171,7 @@ tcgarocbarplotFun <- function(dataForBarPlot) {
     scale_y_continuous(position='right', limits = c(0,4), breaks = c(0,1,2,3,4),
                        expand = c(0, 0)) +
     #ylim(0, max(-log(keggForPlot$Benjamini,10))) +
-    labs(x='', y=expression('-log'[10]*'(P Value)')) + coord_flip() +
+    labs(x='', y=expression('-log'["10"]*'(P Value)')) + coord_flip() +
     #scale_fill_hue(name='',breaks=kegg$Regulation,
     #               labels=kegg$Regulation) +
     scale_fill_manual(values = c(google.red, google.blue)) +
@@ -180,11 +181,11 @@ tcgarocbarplotFun <- function(dataForBarPlot) {
                      panel.grid.minor = element_blank(),
                      panel.border = element_rect(colour='white'),
                      panel.background = element_blank()) +
-    theme(axis.text=element_text(size=12, color='black'),
+    theme(axis.text=element_text(size=12, color='black', face = 'bold'),
           axis.ticks.length = unit(0.2,'cm'),
           axis.ticks.y=element_blank(),
           axis.line.y = element_blank(),
-          axis.title.x =element_text(size=14))+#,
+          axis.title.x =element_text(size=14, face = 'bold'))+#,
     #axis.title.y = element_text(vjust = -2, hjust=1.1, size=12, angle = 0)) +
     theme(legend.text = element_text(size=14),
           legend.title = element_blank(),
@@ -217,17 +218,17 @@ tcgaROCForestplotFun <- function(dataForForestPlot) {
     #                   labels = c(0, 1, 2.5,50,250,7500)) +
     coord_flip()+
     #ylim(0,0.05) +
-    xlab('')+ylab(expression('AUC')) +
-    ggtitle(paste0('ROC Analysis of ', mir.name, ' in TCGA')) +
+    xlab('')+ylab('AUC') +
+    #ggtitle(paste0('ROC Analysis of ', mir.name, ' in TCGA')) +
     #xlim(0,100) +
     theme_bw()+
     #theme_set(theme_minimal()) #
     theme(legend.title = element_blank(),
           legend.text = element_text(size=14),
           legend.position = 'right') +
-    theme(plot.title = element_text(color='black', size=18, face = 'bold', hjust = 0.5)) +
-    theme(axis.title=element_text(size=16),
-          axis.text = element_text(color='black', size=12),
+    #theme(plot.title = element_text(color='black', size=18, face = 'bold', hjust = 0.5)) +
+    theme(axis.title.x=element_text(size=16, face = 'bold'),
+          axis.text = element_text(color='black', size=12, face = 'bold'),
           axis.text.x = element_text(angle = 0, hjust=0.5),
           strip.text = element_text(size=14)) +
     theme(axis.line = element_line(colour = "black"),
@@ -277,7 +278,7 @@ rocplotFun <- function(dataForROCPlot) {
   p <- ggplot(df,aes(x=FPR,y=TPR))+geom_line(size = 1, alpha = 1,color='red')
   
   p <- p + 
-    labs(x = "1-Specificity",y = "Sensitivity")+ 
+    labs(x = "False Positive Rate (1-Specificity)",y = "True Positive Rate (Sensitivity)")+ 
     #scale_x_continuous(expand=c(0,0))+scale_y_continuous(expand=c(0,0))+
     geom_abline(intercept = 0, slope = 1) +
     #geom_segment(x=0,y=0,xend=1,yend=1, color='darkgreen') + xlim(0,1) + ylim(0,1) +
@@ -287,7 +288,8 @@ rocplotFun <- function(dataForROCPlot) {
           panel.grid.minor = element_blank(),
           panel.border = element_rect(colour='black'),
           panel.background = element_blank()) +
-    theme(axis.text=element_text(size=12, color = 'black'), axis.title=element_text(size=14)) +
+    theme(axis.text=element_text(size=12, color = 'black', face = 'bold'), 
+          axis.title=element_text(size=16, face = 'bold')) +
     theme(strip.text.x = element_text(size = 12, colour = "black", angle=0)) +
     ggplot2::annotate("text", 
                       x = 0.6, y = 0.125, # x and y coordinates of the text
@@ -302,10 +304,13 @@ rocplotFun <- function(dataForROCPlot) {
 
 
 volcanoPlotFun <- function(dataForVolcanoPlot, logFcThreshold, adjPvalThreshold) {
+  
+  cols <- c('UP'=google.red, 'NS'='gray','DOWN'=google.green)
+
   p <- ggplot(dataForVolcanoPlot, aes(x = logFC, y = -log10(adj.P.Val))) +
     #xlim(-2,2) +
-    labs(x=expression('log'[2]*'(Fold Change)'), 
-         y=(expression('-log'[10]*'(FDR)')), 
+    labs(x=expression(bold('log'['2']*'(Fold Change)')), 
+         y=(expression(bold('-log'['10']*'(FDR)'))), 
          title=NULL) +
     geom_point(aes(color=Significance), alpha=1, size=2) +
     geom_vline(xintercept = c(-logFcThreshold, logFcThreshold),
@@ -315,7 +320,7 @@ volcanoPlotFun <- function(dataForVolcanoPlot, logFcThreshold, adjPvalThreshold)
     #scale_x_continuous(breaks=c(-4,-2,0,2,4,6,8,10)) +
     #scale_y_continuous(expand = c(0.3, 0)) +
     #scale_color_manual(values = c('#4285F4',"gray", '#FBBC05')) +
-    scale_color_manual(values = c(google.green,"gray", google.red)) +
+    scale_color_manual(values = cols) +
     #facet_wrap(~Comparison, ncol = 2) +
     #geom_text_repel(data = subset(dataForVolcanoPlot, 
     #                              adj.P.Val < adjPvalThreshold & logFC > logFcThreshold), 
@@ -333,8 +338,8 @@ volcanoPlotFun <- function(dataForVolcanoPlot, logFcThreshold, adjPvalThreshold)
           panel.border = element_blank(),
           panel.background = element_blank()) +
     theme(legend.position="none") +
-    theme(axis.text=element_text(size=14),
-          axis.title=element_text(size=16),
+    theme(axis.text=element_text(size=14, face = 'bold'),
+          axis.title=element_text(size=16, face = 'bold'),
           strip.text = element_text(size=14, face='bold')) +
     theme(plot.margin =  margin(t = 0.25, r = 0.25, b = 0.25, l = 0.25, unit = "cm"))
   
@@ -373,8 +378,8 @@ corrplotFun <- function(dataForCorrPlot) {
           panel.border = element_blank(),
           panel.background = element_blank()) +
     theme(legend.position = 'none')+
-    theme(axis.text = element_text(size=14),
-          axis.title = element_text(size=16),
+    theme(axis.text = element_text(size=14, face = 'bold'),
+          axis.title = element_text(size=16, face = 'bold'),
           strip.text.x = element_text(size=14, face='bold'))
   
   return (p)
@@ -418,7 +423,7 @@ piePlotlyFun <- function(dataForPiePlot) {
           marker = list(colors = pie.colors,
                         line = list(color = '#FFFFFF', width = 1)),
           #The 'pull' attribute can also be used to create space between the sectors
-          showlegend = FALSE, height=400, width = 400)
+          showlegend = FALSE) #, height=400, width = 400
 
   # p <- p %>% layout(legend = list(orientation = 'h'))
   # p <- p %>% layout(legend = list(x=100, y=0.5))
@@ -441,9 +446,9 @@ barplotFun <- function(dataForBarPlot) {
                      #panel.grid.minor = element_blank(),
                      panel.border = element_blank(),
                      panel.background = element_blank()) +
-    theme(axis.text=element_text(size=12, color='black'),
+    theme(axis.text=element_text(size=12, color='black', face = 'bold'),
           axis.text.x = element_text(angle=45, hjust=1),
-          axis.title=element_text(size=14)) +
+          axis.title=element_text(size=14, face = 'bold')) +
     theme(legend.text = element_text(size=12),
           legend.title = element_blank(),
           legend.position = 'none') +
@@ -453,19 +458,94 @@ barplotFun <- function(dataForBarPlot) {
 }
 
 
+mirBarPlotFun <- function(dataForBarPlot) {
+  
+  p <- ggplot(data=dataForBarPlot, aes(x=miRNA.ID, y=Median, fill='dodgerblue')) +
+  geom_bar(stat='identity', width=.6) + #coord_flip()
+  # geom_errorbar(aes(ymin=expr-sd,
+  #                   ymax=expr+sd),
+  #               width=.5, size=0.5,
+  #               position=position_dodge(.9)) +
+    xlab('') + ylab(expression(bold('miRNA Level (log'["2"]*'CPM)'))) + 
+  #scale_y_continuous(trans = 'sqrt',
+  #                   breaks = c(0,2.5,50,250,750),
+  #                   labels = c(0,2.5,50,250,750)) +
+  #scale_y_sqrt() +
+  #scale_y_continuous(trans='log2') +
+  scale_fill_manual(values = rep('dodgerblue',nrow(dataForBarPlot))) +
+  #scale_color_manual(values = rep('black',nrow(dataForBarPlot))) +
+  theme_bw()+
+  theme(legend.title = element_blank(),
+        legend.text = element_text(size=14),
+        legend.position = 'none') +
+  theme(axis.title=element_text(size=16, face = 'bold'),
+        axis.text = element_text(color='black', size=14, face = 'bold'),
+        axis.text.x = element_text(angle = 45, hjust=1)) +
+  theme(axis.line = element_line(colour = "black"),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        panel.grid = element_blank(),
+        panel.grid.major = element_blank()) +
+  theme(plot.margin =  margin(t = 0.25, r = 0.25, b = 0.25, l = 1, unit = "cm"))
+
+  p
+  
+}
+
+
+mirBarPlotCCMAFun <- function(dataForBarPlot) {
+  
+  p <- ggplot(data=dataForBarPlot, aes(x=miRNA.ID, y=Median, fill='dodgerblue')) +
+    geom_bar(stat='identity', width=.6) + #coord_flip()
+    # geom_errorbar(aes(ymin=expr-sd,
+    #                   ymax=expr+sd),
+    #               width=.5, size=0.5,
+    #               position=position_dodge(.9)) +
+    xlab('') + ylab(expression(bold('miRNA Level (log'["2"]*'Intensity)'))) + 
+    #scale_y_continuous(trans = 'sqrt',
+    #                   breaks = c(0,2.5,50,250,750),
+    #                   labels = c(0,2.5,50,250,750)) +
+    #scale_y_sqrt() +
+    #scale_y_continuous(trans='log2') +
+    scale_fill_manual(values = rep('dodgerblue',nrow(dataForBarPlot))) +
+    #scale_color_manual(values = rep('black',nrow(dataForBarPlot))) +
+    theme_bw()+
+    theme(legend.title = element_blank(),
+          legend.text = element_text(size=14),
+          legend.position = 'none') +
+    theme(axis.title=element_text(size=16, face = 'bold'),
+          axis.text = element_text(color='black', size=14, face = 'bold'),
+          axis.text.x = element_text(angle = 45, hjust=1)) +
+    theme(axis.line = element_line(colour = "black"),
+          panel.border = element_blank(),
+          panel.background = element_blank(),
+          panel.grid = element_blank(),
+          panel.grid.major = element_blank()) +
+    theme(plot.margin =  margin(t = 0.25, r = 0.25, b = 0.25, l = 1, unit = "cm"))
+  
+  p
+  
+}
+
+
+
+
+
+
+
 histogramFun <- function(dataForHistogram) {
 
-  p <- ggplot(data=dataForHistogram, aes(log2(preop_psa+1), fill=google.blue)) + 
+  p <- ggplot(data=dataForHistogram, aes(x, fill=google.blue)) + 
     geom_histogram() + 
     scale_fill_manual(values=c(google.blue)) +
-    labs(x=expression('Log'[2]*'(Preoperative PSA + 1)'), y='Count') +
+    labs(x='Age at Diagnosis', y='Number of Patients') +
     theme_bw()+theme(axis.line = element_line(colour = "black"),
                      #panel.grid.major = element_blank(),
                      #panel.grid.minor = element_blank(),
                      panel.border = element_blank(),
                      panel.background = element_blank()) +
-    theme(axis.text=element_text(size=12, color='black'),
-          axis.title=element_text(size=14)) +
+    theme(axis.text=element_text(size=12, color='black', face = 'bold'),
+          axis.title=element_text(size=14, face = 'bold')) +
     theme(legend.text = element_text(size=12),
           legend.title = element_blank(),
           legend.position = 'none') +
@@ -575,17 +655,17 @@ tcgaKMForestplotFun <- function(dataForForestPlot) {
     #                   labels = c(0, 1, 2.5,50,250,7500)) +
     coord_flip()+
     #ylim(0,0.05) +
-    xlab('')+ylab(expression('HR')) +
-    ggtitle(paste0('Kaplan Meier Survival Analysis of ', mir.name, ' in TCGA')) +
+    xlab('')+ylab('Hazard Ratio') +
+    #ggtitle(paste0('Kaplan Meier Survival Analysis of ', mir.name, ' in TCGA')) +
     #xlim(0,100) +
     theme_bw()+
     #theme_set(theme_minimal()) #
     theme(legend.title = element_blank(),
           legend.text = element_text(size=14),
           legend.position = 'right') +
-    theme(plot.title = element_text(color='black', size=18, face = 'bold', hjust = 0.5)) +
-    theme(axis.title=element_text(size=16),
-          axis.text = element_text(color='black', size=12),
+    #theme(plot.title = element_text(color='black', size=18, face = 'bold', hjust = 0.5)) +
+    theme(axis.title.x=element_text(size=16, face = 'bold'),
+          axis.text = element_text(color='black', size=12, face = 'bold'),
           axis.text.x = element_text(angle = 0, hjust=0.5),
           strip.text = element_text(size=14)) +
     theme(axis.line = element_line(colour = "black"),
@@ -644,17 +724,17 @@ KMPlotFun <- function(dataForKMPlot, sep='median', type='os') {
   
   fit <- survfit(Surv(os.time, os.status) ~ risk.group, data=dataForKMPlot)
   
-  lgd.xpos <- 0.27
-  lgd.ypos = 0.3
+  lgd.xpos <- 0.3
+  lgd.ypos = 0.22
   
-  p.xpos = max(dataForKMPlot$os.time, na.rm=TRUE)/25
-  p.ypos = 0.07
+  p.xpos = max(dataForKMPlot$os.time, na.rm=TRUE)/50
+  p.ypos = 0.05
   
   #title <- 'PFR10YR'
   #type <- 'Relapse-free Survival'
   
   plt <- ggsurvplot(fit, data=dataForKMPlot, pval = paste0(label.hr, '\n', label.p), pval.coord = c(p.xpos, p.ypos),
-                    pval.size=5.5,
+                    pval.size=4.2,
                     font.main = c(16, 'bold', 'black'), conf.int = FALSE, 
                     #title = title,
                     legend = c(lgd.xpos, lgd.ypos), 
@@ -662,21 +742,146 @@ KMPlotFun <- function(dataForKMPlot, sep='median', type='os') {
                     palette= c(google.blue, google.red),
                     legend.labs = c(paste('Low Expression (N=',n.low,')',sep=''), 
                                     paste('High Expression (N=',n.high,')',sep='')),  
-                    legend.title='Group',
-                    xlab = x.title, ylab = 'Survival probability',
-                    font.x = c(20), font.y = c(20), ylim=c(0,1), #16
+                    legend.title='', # Group
+                    xlab = x.title, ylab = 'Survival Probability',
+                    font.x = c(16), font.y = c(16), ylim=c(0,1), #20
                     ggtheme = theme_bw()+ theme(axis.line = element_line(colour = "black"),
                                                 panel.grid.major = element_blank(),
                                                 panel.grid.minor = element_blank(),
                                                 #panel.border = element_rect(colour='black'),
                                                 panel.border = element_blank(),
                                                 panel.background = element_blank(),
-                                                legend.text = element_text(size=16),#14
-                                                legend.title = element_text(size=16),
-                                                #axis.title = element_text(size=30),
-                                                axis.text = element_text(size=18, color='black')))
+                                                legend.text = element_text(size=12),#16
+                                                legend.title = element_blank(), # 16
+                                                legend.box.background = element_blank(),
+                                                axis.title = element_text(size = 16, face = 'bold'),
+                                                axis.text = element_text(size=12, color='black', face = 'bold'))) # 18
   
   return(plt[[1]])
+  
+}
+
+
+KMRiskPlotFun <- function(dataForKMPlot, sep='median', type='os') {
+  
+  if (sep=='1stQu') {
+    risk.threshold <- as.numeric(summary(dataForKMPlot$expr)[2])
+  } else if (sep=='median') {
+    risk.threshold <- as.numeric(summary(dataForKMPlot$expr)[3])
+  } else if (sep=='mean') {
+    risk.threshold <- as.numeric(summary(dataForKMPlot$expr)[4])
+  } else if (sep=='3rdQu') {
+    risk.threshold <- as.numeric(summary(dataForKMPlot$expr)[5])
+  }
+  
+  dataForKMPlot$risk.group <- dataForKMPlot$expr > risk.threshold
+  
+  if (type == 'os') {
+    x.title <- 'Overall Survival (months)'
+  } else if (group == 'rfs') {
+    x.title <- 'Relapse-free Survival (months)'
+  }  else if (group == 'mfs') {
+    x.title <- 'Metastasis-free Survival (months)'
+  }
+  
+  n.high <- sum(dataForKMPlot$risk.group, na.rm=T)
+  n.low <- sum(!dataForKMPlot$risk.group, na.rm=T)
+  
+  sdf <- survdiff(Surv(dataForKMPlot$os.time, dataForKMPlot$os.status) ~ dataForKMPlot$risk.group)
+  p.val <- pchisq(sdf$chisq, length(sdf$n)-1, lower.tail = FALSE)
+  #p.val = 1 - pchisq(data.survdiff$chisq, length(data.survdiff$n) - 1)
+  
+  hr = (sdf$obs[2]/sdf$exp[2])/(sdf$obs[1]/sdf$exp[1])
+  upper95 = exp(log(hr) + qnorm(0.975)*sqrt(1/sdf$exp[2]+1/sdf$exp[1]))
+  lower95 = exp(log(hr) - qnorm(0.975)*sqrt(1/sdf$exp[2]+1/sdf$exp[1]))
+  
+  hr <- format(hr, digits = 2, nsmall=2)
+  upper95 <- format(upper95, digits = 2, nsmall=2)
+  lower95 <- format(lower95, digits = 2, nsmall=2)
+  
+  p.val <- ifelse(p.val >= 0.01, formatC(p.val, digits = 2), 
+                  formatC(p.val, format = "e", digits = 2))
+  
+  label.hr <- paste('HR = ', hr, ' (', lower95, ' - ', upper95, ')', sep='')
+  label.p <- paste('P Value = ', p.val, sep='')
+  
+  fit <- survfit(Surv(os.time, os.status) ~ risk.group, data=dataForKMPlot)
+  
+  lgd.xpos <- 0.2
+  lgd.ypos = 0.24
+  
+  p.xpos = max(dataForKMPlot$os.time, na.rm=TRUE)/50
+  p.ypos = 0.07
+  
+  #title <- 'PFR10YR'
+  #type <- 'Relapse-free Survival'
+  
+  plt <- ggsurvplot(fit, data=dataForKMPlot, pval = paste0(label.hr, '\n', label.p), pval.coord = c(p.xpos, p.ypos),
+                    pval.size=4.8,
+                    font.main = c(16, 'bold', 'black'), conf.int = FALSE, 
+                    #title = title,
+                    legend = c(lgd.xpos, lgd.ypos), 
+                    #color = c('blue', 'green'),
+                    palette= c(google.blue, google.red),
+                    legend.labs = c(paste('Low Risk (N=',n.low,')',sep=''), 
+                                    paste('High Risk (N=',n.high,')',sep='')),  
+                    legend.title='',
+                    xlab = x.title, ylab = 'Survival Probability',
+                    font.x = c(18), font.y = c(18), ylim=c(0,1), #16
+                    ggtheme = theme_bw()+ theme(axis.line = element_line(colour = "black"),
+                                                panel.grid.major = element_blank(),
+                                                panel.grid.minor = element_blank(),
+                                                #panel.border = element_rect(colour='black'),
+                                                panel.border = element_blank(),
+                                                panel.background = element_blank(),
+                                                legend.text = element_text(size=14),#14
+                                                legend.title = element_blank(), # 16
+                                                legend.box.background = element_blank(),
+                                                axis.title = element_text(size=18, face = 'bold'),
+                                                axis.text = element_text(size=14, color='black', face = 'bold')))
+  
+  return(plt[[1]])
+  
+}
+
+
+SurvROCPlotFun <- function(dataForSurvROCPlot, risk.score=NULL, auc=NULL) {
+  
+  #nobs <- length(risk.score)
+  #0.25*nobs^(-0.20)
+  
+  p <- ggplot(dataForSurvROCPlot,aes(x=FPR,y=TPR))+
+    geom_line(color=google.red, size = 1, alpha = 1)+
+    labs(x = "False Positive Rate (1-Specificity)",y = "True Positive Rate (Sensitivity)")+
+    #geom_line(data=subset(df_all,group=='Reference line'), aes(x=FPR,Y=TPR, color='black'),size = 0.5, alpha = 1) +
+    #' scale_color_manual(values=c('Four-gene signature 0.634'='red',
+    #'                             'MAP3K8 0.437'='blue',
+    #'                             'CCL20 0.557'='chocolate',
+    #'                             'VEGFC 0.585'='cyan3',
+    #'                             'ANGPTL4 0.596'='green',
+    #'                             #'ADM2 0.444'='green',
+    #'                             'Reference line'='black'))+
+    #scale_color_discrete(name = "AUC", labels = c('Five-gene signature 0.644','MAP3K8 0.522','CCL20 0.597','VEGFC 0.591',
+    #                                              'ANGPTL4 0.569','ADM2 0.59','Reference line')) +
+    #geom_segment(x=0,y=0,xend=1,yend=1, color='black', size=1) + 
+  geom_abline(intercept = 0, slope=1, color='black', size=1)+
+    #xlim(0,1) + ylim(0,1) +
+    theme_bw()+
+    theme(axis.line = element_line(colour = "black"),
+          # panel.grid.major = element_blank(),
+          # panel.grid.minor = element_blank(),
+          panel.border = element_rect(colour='black'),
+          panel.background = element_blank()) +
+    theme(axis.text=element_text(size=14, color = 'black', face = 'bold'), 
+          axis.title=element_text(size=18, color = 'black', face = 'bold')) +
+    theme(strip.text.x = element_text(size = 14, colour = "black", angle=0)) +
+    ggplot2::annotate("text", 
+                      x = 0.75, y = 0.2, # x and y coordinates of the text
+                      label = paste0("AUC = ", auc), size = 5.2) +
+    theme(legend.position=c(0.8,0.2), legend.title=element_blank())
+  
+  
+  return(p)
   
 }
 
@@ -706,12 +911,12 @@ ExprCorrPlotFun <- function(dataForCorrPlot) {
     theme_bw() +
     #theme(legend.position = 'none') +
     #theme(plot.title = element_text(hjust = 0.5, face='bold', size=16)) +
-    theme(axis.text.y = element_text(size=12,color='black'),
-          axis.text.x = element_text(size=12,color='black', angle = 0, hjust = 0.5),
+    theme(axis.text.y = element_text(size=12,color='black', face = 'bold'),
+          axis.text.x = element_text(size=12,color='black', face = 'bold', angle = 0, hjust = 0.5),
           legend.title = element_blank(),
           legend.text = element_text(size=12),
           legend.spacing.x = unit(0.1, "cm"),
-          axis.title = element_text(size=14),
+          axis.title = element_text(size=14, face = 'bold'),
           #strip.text = element_text(size=14, face='bold'),
           panel.border = element_rect(colour = "black"))
   
@@ -725,7 +930,7 @@ EnrichmentBarPlotFun <- function(dataForBarPlot) {
     geom_bar(stat='identity') +
     scale_x_discrete(limits=rev(dataForBarPlot$Description)) +
     ylim(0, max(-log10(dataForBarPlot$BH.Adj.P))) +
-    labs(x='', y=expression('-log'[10]*'(BH Adjusted P)')) + coord_flip() +
+    labs(x='', y=expression(bold('-log'["10"]*'(FDR)'))) + coord_flip() +
     #scale_fill_hue(name='',breaks=kegg$Regulation,
     #               labels=kegg$Regulation) +
     #scale_fill_manual(values = c('orange','dodgerblue')) +
@@ -736,8 +941,8 @@ EnrichmentBarPlotFun <- function(dataForBarPlot) {
                      panel.grid.minor = element_blank(),
                      panel.border = element_rect(colour='white'),
                      panel.background = element_blank()) +
-    theme(axis.text=element_text(size=14, color='black'),
-          axis.title=element_text(size=16)) +
+    theme(axis.text=element_text(size=14, color='black', face = 'bold'),
+          axis.title=element_text(size=16, face = 'bold')) +
     theme(legend.text = element_text(size=14),
           legend.title = element_blank(),
           legend.position = 'none')
@@ -761,15 +966,15 @@ EnrichmentBubblePlotFun <- function(dataForBubblePlot) {
     #facet_grid(Regulation~Comparison) + # scales=free
     xlab('')+ylab('Fold Enrichment') + #ggtitle("") + 
     guides(shape = guide_legend(order=1),
-           colour = guide_colourbar(order=2, title = 'BH Adjusted P')) + #'P Value\n(Benjamini)'))
+           colour = guide_colourbar(order=2, title = 'FDR')) + #'P Value\n(Benjamini)'))
     theme_bw()+theme(axis.line = element_line(colour = "black"),
                      panel.grid.minor = element_blank(),
                      panel.border = element_rect(colour='black'),
                      panel.background = element_blank()) +
     theme(plot.title = element_text(hjust = 0.5, size=20)) +
-    theme(axis.text=element_text(size=14, color='black'),
-          axis.text.x =element_text(size=14, color='black', angle=0, hjust=0.5),
-          axis.title=element_text(size=15)) +
+    theme(axis.text=element_text(size=14, color='black', face = 'bold'),
+          axis.text.x =element_text(size=14, color='black', face = 'bold', angle=0, hjust=0.5),
+          axis.title=element_text(size=16, face = 'bold')) +
     theme(legend.text = element_text(size = 14),
           legend.title = element_text(size = 14)) +
     theme(#strip.text = element_text(size = 14),
@@ -801,19 +1006,19 @@ CircViolinPlotFun <- function(dataForViolinPlot) {
     facet_wrap(~dataset, nrow=1, scales = 'free') +
     #geom_jitter(size=0.1, width=0.2) +
     #ylim(-0.1,3)+
-    xlab('') + ylab(expression('log'[2]*'(Intensity)')) + 
+    xlab('') + ylab(expression(bold('miRNA Level (log'["2"]*'Intensity)'))) + 
     #ggtitle(paste0('Expression of ', gene.symbol)) +
     #guides(fill = guide_legend(nrow=1)) +
     theme_bw() +
     theme(legend.position = 'none') +
     #theme(plot.title = element_text(hjust = 0.5, face='bold', size=16)) +
-    theme(axis.text.y = element_text(size=12,color='black'),
-          axis.text.x = element_text(size=12,color='black', angle = 45, hjust = 1),
+    theme(axis.text.y = element_text(size=14,color='black', face = 'bold'),
+          axis.text.x = element_text(size=14,color='black', face = 'bold', angle = 45, hjust = 1),
           legend.title = element_blank(),
           legend.text = element_text(size=12),
           legend.spacing.x = unit(0.1, "cm"),
-          axis.title = element_text(size=14),
-          strip.text = element_text(size=14, face='bold'),
+          axis.title = element_text(size=16),
+          strip.text = element_text(size=16, face='bold'),
           panel.border = element_rect(colour = "black"))
   
   #p <- p + geom_jitter(size=0.1, width=0.2)
