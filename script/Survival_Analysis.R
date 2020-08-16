@@ -173,6 +173,9 @@ for (prj in projects) {
                         row.names = NULL,
                         stringsAsFactors = F)
   
+  o <- order(abs(feature$Coefficient), decreasing = T)
+  feature <- feature[o,]
+  
   lasso.list[[prj]] <- feature
   
 }
@@ -184,6 +187,9 @@ for (prj in projects) {
 saveRDS(lasso.list, file='Survival.Lasso.Feature.TCGA.RDS')
 saveRDS(plot.cvfit.list, file='Survival.Lasso.Plot.TCGA.RDS')
 
+
+#####
+lasso.list <- readRDS(file='Survival.Lasso.Feature.TCGA.RDS')
 
 risk.km.plot.list <- list()
 
@@ -237,7 +243,75 @@ saveRDS(risk.km.plot.list, file='Survival.KM.Risk.Plot.TCGA.RDS')
 
 
 
+##################
 
+library(survivalROC)
+
+lasso.list <- readRDS(file='Survival.Lasso.Feature.TCGA.RDS')
+
+risk.surv.roc.plot.list <- list()
+
+for (prj in projects) {
+  
+  message(prj)
+  
+  coef <- lasso.list[[prj]]
+  
+  expr <- mir.tcga[[prj]]
+  meta <- meta.tcga[[prj]]
+  
+  samples <- which(meta$sample_type=='Tumor')
+  expr <- expr[,samples]
+  meta <- meta[samples,]
+  
+  os.time <- as.numeric(meta$OS.time)/30
+  os.time[os.time==0] <- 0.001
+  os.status <- as.numeric(meta$OS)
+  
+  if (nrow(coef) == 0) {
+    p <- ggplot()
+  } else {
+    
+    mir <- coef$miRNA.Accession
+    
+    expr <- expr[mir,]
+    coef <- coef$Coefficent
+    
+    if (length(coef)==1) {
+      risk.score <- coef*expr
+    } else {
+      risk.score <- as.numeric(apply(expr, 2, function(v) sum(v*coef)))
+    }
+    
+    # risk.threshold <- as.numeric(summary(risk.score)[3])
+    # risk.group <- risk.score > risk.threshold
+    
+    x <- survivalROC(Stime = os.time,status = os.status, 
+                     #method = 'KM', 
+                     method = 'NNE', span = 0.01,
+                     marker = as.numeric(risk.score),
+                     predict.time=5*12)
+    
+    FPR <- x$FP
+    TPR <- x$TP
+    
+    auc <- round(x$AUC,3)
+    
+    dataForSurvROCPlot <- data.frame(FPR,TPR)
+
+    p <- SurvROCPlotFun(dataForSurvROCPlot, auc = auc)
+    
+  }
+  
+  risk.surv.roc.plot.list[[prj]] <- p
+  
+}
+
+saveRDS(risk.surv.roc.plot.list, file='Survival.ROC.Risk.Plot.TCGA.RDS')
+
+risk.surv.roc.plot.list[[6]]
+
+########
 
 risk.three.plot.list <- list()
 
