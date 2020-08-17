@@ -903,20 +903,21 @@ ExprCorrPlotFun <- function(dataForCorrPlot) {
     geom_point(aes(color=group), size=2) + # shape=group, 
     xlab(paste(mir.id,' (',mir.name,')',sep='')) +
     ylab(paste(target.id,' (',target.name,')',sep='')) + 
-    geom_smooth(method="lm",col='darkgreen', size=2) + # 
+    geom_smooth(method="lm",col='black', size=1) + # 
     scale_colour_manual(breaks = dataForCorrPlot$group, 
-                        values = c('darkblue', 'darkred')) +
+                        values = c(google.blue, google.red)) +
     ggplot2::annotate("text", x = xpos, y = ypos, 
                       label = paste('R = ', coef, ', P = ', p.val, sep=''), size = 5) +
     theme_bw() +
     #theme(legend.position = 'none') +
     #theme(plot.title = element_text(hjust = 0.5, face='bold', size=16)) +
-    theme(axis.text.y = element_text(size=12,color='black', face = 'bold'),
-          axis.text.x = element_text(size=12,color='black', face = 'bold', angle = 0, hjust = 0.5),
+    theme(axis.text.y = element_text(size=14,color='black', face = 'bold'),
+          axis.text.x = element_text(size=14,color='black', face = 'bold', angle = 0, hjust = 0.5),
           legend.title = element_blank(),
-          legend.text = element_text(size=12),
+          legend.text = element_text(size=14),
           legend.spacing.x = unit(0.1, "cm"),
-          axis.title = element_text(size=14, face = 'bold'),
+          legend.position = 'bottom',
+          axis.title = element_text(size=16, face = 'bold'),
           #strip.text = element_text(size=14, face='bold'),
           panel.border = element_rect(colour = "black"))
   
