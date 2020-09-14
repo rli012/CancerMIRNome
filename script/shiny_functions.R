@@ -1,5 +1,7 @@
+#.libPaths(c(.libPaths(), '/home/ubuntu/R/x86_64-pc-linux-gnu-library/3.6/'))
 
 library(RColorBrewer)
+library(plotROC)
 
 google.red <- '#ea4235'
 google.yellow <- '#fabd03'
@@ -43,6 +45,42 @@ pie.colors <- c(google.colors, default.colors[c(5:20,4,21:23,25:40)])
 
 
 col_fun = colorRampPalette(rev(c(google.red,'white',google.blue)), space = "Lab")(100)
+
+
+
+ROCAnalysisFun <- function(expr, group) {
+  
+  roc.test <- roc(group, expr, plot=FALSE, ci=TRUE, auc=TRUE)
+  ci.auc <- roc.test$ci
+  
+  auc <- ci.auc[2]
+  auc.ci.lower95 <- ci.auc[1]
+  auc.ci.upper95 <- ci.auc[3]
+  
+  auc <- format(auc, digits = 2, nsmall=2)
+  auc.ci.lower95 <- format(auc.ci.lower95, digits = 2, nsmall=2)
+  auc.ci.upper95 <- format(auc.ci.upper95, digits = 2, nsmall=2)
+  
+  
+  # pred <- prediction(expr, group)
+  # perf <- performance(pred, measure = "tpr", x.measure = "fpr")
+  # 
+  # FPR <- perf@x.values[[1]]
+  # TPR <- perf@y.values[[1]]
+  # 
+  # #df <- data.frame(FPR,TPR)
+  # 
+  # auc.test <- wilcox.test(FPR, TPR, alternative = 'two.sided')
+  # pvalue <- formatC(auc.test$p.value, format = 'e', digits = 2)
+  
+  return (c(auc, auc.ci.lower95, auc.ci.upper95)) #, pvalue
+}
+
+
+
+
+
+
 
 
 
@@ -292,6 +330,7 @@ rocplotFun <- function(dataForROCPlot) {
   if (length(unique(dataForROCPlot$group))==1) {
     p <- ggplot() +
       labs(x = "False Positive Rate (1-Specificity)",y = "True Positive Rate (Sensitivity)")+ 
+      xlim(0,1) + ylim(0,1) +
       theme_bw()+
       theme(legend.position = 'none') +
       theme(axis.line = element_line(colour = "black"),
@@ -303,10 +342,11 @@ rocplotFun <- function(dataForROCPlot) {
             axis.title=element_text(size=16, face = 'bold')) +
       theme(strip.text.x = element_text(size = 12, colour = "black", angle=0)) +
       ggplot2::annotate("text",
-                        x = 0.2, y = 0.5, # x and y coordinates of the text
+                        x = 0.5, y = 0.5, # x and y coordinates of the text
                         label = 'Warning: only one group',
                         color='red',
-                        size=5.5) #+
+                        size=5.5,
+                        fontface='bold.italic') #+
     # ggplot2::annotate("text", 
     #                   x = 0.6, y = 0.25, # x and y coordinates of the text
     #                   label = paste0('P=',pvalue), size = 5)
@@ -315,16 +355,11 @@ rocplotFun <- function(dataForROCPlot) {
     group.mean <- dataForROCPlot %>% group_by(group) %>%
       summarise(m=mean(expr))
     
-    if (group.mean$group[which.max(group.mean$m)]==1) {
-      increasing = TRUE
-    } else {
-      increasing = FALSE
-    }
+    case <- group.mean$group[which.max(group.mean$m)]
     
-    #dataForROCPlot$group <- ifelse(group==group.mean$group[which.max(group.mean$m)], 1, 0)
-    
+    dataForROCPlot$group <- ifelse(dataForROCPlot$group==case,1,0)
+
     roc.test <- roc(dataForROCPlot$group, dataForROCPlot$expr, plot=FALSE, ci=TRUE, auc=TRUE)
-    
     ci.auc <- roc.test$ci
     
     auc <- ci.auc[2]
@@ -351,12 +386,12 @@ rocplotFun <- function(dataForROCPlot) {
     #p <- ggplot(df,aes(x=FPR,y=TPR))+geom_line(size = 1, alpha = 1,color='red')
     
     p <- ggplot(dataForROCPlot, aes(m=expr, d=group, color='red')) + 
-      geom_roc(n.cuts = 0, increasing=increasing)
+      geom_roc(n.cuts = 0, increasing=TRUE)
     
     p <- p + 
       labs(x = "False Positive Rate (1-Specificity)",y = "True Positive Rate (Sensitivity)")+ 
       #scale_x_continuous(expand=c(0,0))+scale_y_continuous(expand=c(0,0))+
-      geom_abline(intercept = 0, slope = 1) +
+      geom_abline(intercept = 0, slope = 1, size = 0.8, linetype='solid') +
       scale_color_manual(values = 'red') +
       #geom_segment(x=0,y=0,xend=1,yend=1, color='darkgreen') + xlim(0,1) + ylim(0,1) +
       theme_bw()+
@@ -504,11 +539,31 @@ piePlotlyFun <- function(dataForPiePlot) {
                         line = list(color = '#FFFFFF', width = 1)),
           #The 'pull' attribute can also be used to create space between the sectors
           showlegend = FALSE) #, height=400, width = 400
+  
+  p <- p %>% layout(margin = list(l=20, r=20, b=10, t=20))
 
   # p <- p %>% layout(legend = list(orientation = 'h'))
   # p <- p %>% layout(legend = list(x=100, y=0.5))
   
   p
+  
+}
+
+
+
+histPlotlyFun <- function(dataForHistogram) {
+  
+  p <- plot_ly(x = ~dataForHistogram$x, type='histogram',
+               marker = list(color = pie.colors[1],
+                             line = list(color = '#FFFFFF', width = 0.5))) %>%
+    layout(yaxis = list(title = "Number of Patients",
+                        font = list(size=14, color='black'),
+                        zeroline = FALSE),
+           xaxis = list(title = "Age at Diagnosis",
+                        font = list(size=14, color='black'),
+                        zeroline = FALSE))
+  
+  return(p)
   
 }
 
@@ -804,7 +859,7 @@ KMPlotFun <- function(dataForKMPlot, sep='median', type='os') {
   
   fit <- survfit(Surv(os.time, os.status) ~ risk.group, data=dataForKMPlot)
   
-  lgd.xpos <- 0.3
+  lgd.xpos <- 0.32
   lgd.ypos = 0.22
   
   p.xpos = max(dataForKMPlot$os.time, na.rm=TRUE)/50
@@ -833,7 +888,9 @@ KMPlotFun <- function(dataForKMPlot, sep='median', type='os') {
                                                 panel.background = element_blank(),
                                                 legend.text = element_text(size=12),#16
                                                 legend.title = element_blank(), # 16
-                                                legend.box.background = element_blank(),
+                                                legend.key = element_blank(),
+                                                #legend.box.background = element_blank(),
+                                                legend.background = element_blank(),
                                                 axis.title = element_text(size = 16, face = 'bold'),
                                                 axis.text = element_text(size=12, color='black', face = 'bold'))) # 18
   
@@ -890,7 +947,8 @@ KMRiskPlotFun <- function(dataForKMPlot, sep='median', type='os') {
   lgd.xpos <- 0.2
   lgd.ypos = 0.24
   
-  p.xpos = max(dataForKMPlot$os.time, na.rm=TRUE)/50
+  #p.xpos = max(dataForKMPlot$os.time, na.rm=TRUE)/50
+  p.xpos = max(dataForKMPlot$os.time, na.rm=TRUE)*0.01
   p.ypos = 0.07
   
   #title <- 'PFR10YR'
@@ -916,7 +974,9 @@ KMRiskPlotFun <- function(dataForKMPlot, sep='median', type='os') {
                                                 panel.background = element_blank(),
                                                 legend.text = element_text(size=14),#14
                                                 legend.title = element_blank(), # 16
-                                                legend.box.background = element_blank(),
+                                                legend.key = element_blank(),
+                                                #legend.box.background = element_blank(),
+                                                legend.background = element_blank(),
                                                 axis.title = element_text(size=18, face = 'bold'),
                                                 axis.text = element_text(size=14, color='black', face = 'bold')))
   
@@ -978,6 +1038,7 @@ ExprCorrPlotFun <- function(dataForCorrPlot) {
   target.id <- dataForCorrPlot$target.id[1]
   target.name <- dataForCorrPlot$target.name[1]
   
+  cols <- c("Tumor" = google.red, "Normal" = google.blue)
   
   p <- ggplot(dataForCorrPlot, aes(x=mir.expr, y=rna.expr)) + 
     geom_point(aes(color=group), size=2) + # shape=group, 
@@ -985,7 +1046,7 @@ ExprCorrPlotFun <- function(dataForCorrPlot) {
     ylab(paste(target.id,' (',target.name,')',sep='')) + 
     geom_smooth(method="lm",col='black', size=1) + # 
     scale_colour_manual(breaks = dataForCorrPlot$group, 
-                        values = c(google.blue, google.red)) +
+                        values = cols) +
     ggplot2::annotate("text", x = xpos, y = ypos, 
                       label = paste('R = ', coef, ', P = ', p.val, sep=''), size = 5) +
     theme_bw() +
