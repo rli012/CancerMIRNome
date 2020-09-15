@@ -24,6 +24,7 @@ library(pheatmap)
 library(plotly)
 library(glmnet)
 
+
 library(dashboardthemes)
 library(shinythemes)
 
@@ -59,7 +60,7 @@ ccma.primary <- readRDS('data/miRNomes_Datasets_Primary.RDS')
 ### TCGA Data
 meta.tcga <- readRDS('data/Metadata_TCGA.RDS')
 mir.tcga <- readRDS('data/miRNA_Expression_TCGA.RDS')
-rna.tcga <- readRDS('data/RNAseq_Expression_TCGA.miRTarBase.RDS')
+#rna.tcga <- readRDS('data/RNAseq_Expression_TCGA.miRTarBase.RDS')
 
 
 ### TCGA Data Analysis
@@ -83,7 +84,7 @@ surv.roc.plot.tcga <- readRDS(file='data/Survival.ROC.Risk.Plot.TCGA.RDS')
 pca.tcga <- readRDS(file='data/PCA.Analysis.TCGA.RDS')
 
 ### Correlation/Functional Analysis
-cor.table <- readRDS('data/Correlation.miRTarBase.RDS')
+#cor.table <- readRDS('data/Correlation.miRTarBase.RDS')
 enrichment.table <- readRDS('data/Enrichment.miRTarBase.RDS')
 
 
@@ -454,7 +455,8 @@ server <- function(input, output, session) {
       mir <- input$mir.id
       project <- input$project.id.cor
       
-      cor.table[[project]][[mir]]
+      cor.table <- getCorTable(project = project, mir = mir)
+      cor.table
       
     }, 
     callback=JS('$("button.buttons-copy").css("background","lightskyblue");
@@ -476,22 +478,27 @@ server <- function(input, output, session) {
         mir <- input$mir.id
         project <- input$project.id.cor
         
+        cor.table <- getCorTable(project = project, mir = mir)
+        
         idx <- input$correlation_rows_selected
-        mir.id <- cor.table[[project]][[mir]][idx, 'miRNA.Accession']
-        mir.name <- cor.table[[project]][[mir]][idx, 'miRNA.ID']
+        mir.id <- cor.table[idx, 'miRNA.Accession']
+        mir.name <- cor.table[idx, 'miRNA.ID']
         
-        target.id <- cor.table[[project]][[mir]][idx, 'Target.Ensembl']
-        target.name <- cor.table[[project]][[mir]][idx, 'Target.Symbol']
+        target.id <- cor.table[idx, 'Target.Ensembl']
+        target.name <- cor.table[idx, 'Target.Symbol']
         
-        samples <- intersect(colnames(mir.tcga[[project]]), colnames(rna.tcga[[project]]))
+        rna.tcga <- getRNATable(project)
+        colnames(rna.tcga) <- gsub('.', '-', colnames(rna.tcga), fixed = T)
         
-        mir.expr <- mir.tcga[[project]][mir.id,samples]
-        rna.expr <- rna.tcga[[project]][target.id,samples]
+        samples <- intersect(colnames(mir.tcga[[project]]), colnames(rna.tcga))
+        
+        mir.expr <- as.numeric(mir.tcga[[project]][mir.id,samples])
+        rna.expr <- as.numeric(rna.tcga[target.id,samples])
         
         group <- meta.tcga[[project]][samples,'sample_type']
-        
-        coef <- cor.table[[project]][[mir]][idx, 'Correlation']
-        p.val <- cor.table[[project]][[mir]][idx, 'P.Value']
+
+        coef <- cor.table[idx, 'Correlation']
+        p.val <- cor.table[idx, 'P.Value']
         
         dataForCorrPlot <- data.frame(mir.expr, rna.expr, group, project,
                                       mir.id, target.id, mir.name, target.name,
