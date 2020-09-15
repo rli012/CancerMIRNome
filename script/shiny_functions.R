@@ -2,6 +2,7 @@
 
 library(RColorBrewer)
 library(plotROC)
+library(RSQLite)
 
 google.red <- '#ea4235'
 google.yellow <- '#fabd03'
@@ -1190,4 +1191,38 @@ plot_overlay_server <- function(input,
     p
     
   })
+}
+
+
+#############################
+
+getCorTable <- function(project, mir, sql='data/Correlation.miRTarBase.sqlite') {
+  
+  db <- dbConnect(SQLite(), dbname=sql)
+  
+  CMD <- paste0("SELECT * FROM [", project, "] WHERE [miRNA.Accession] == '", mir, "'")
+  
+  query <- dbSendQuery(db, CMD)
+  cor.table <- dbFetch(query)
+  
+  dbClearResult(query)
+  dbDisconnect(db)
+  
+  return (cor.table)
+  
+}
+
+getRNATable <- function(project) {
+  
+  if (project=='TCGA-BRCA') {
+    expr.table <- readRDS('data/RNAseq_Expression_TCGA.miRTarBase.TCGA-BRCA.RDS')
+  } else {
+    db <- dbConnect(SQLite(), dbname='data/RNAseq_Expression_TCGA.miRTarBase.sqlite')
+    expr.table <- dbReadTable(db, project, row.names=TRUE)
+    dbDisconnect(db)
+    
+  }
+
+  return (expr.table)
+  
 }
