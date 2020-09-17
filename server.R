@@ -92,7 +92,7 @@ enrichment.table <- readRDS('data/Enrichment.miRTarBase.RDS')
 ### CCMA Data Analysis
 expr.high.ccma <- readRDS(file='data/Highly.Expressed.miRNAs.CCMA.RDS')
 
-expr.ccma <- readRDS('data/miRNomes_Expression.RDS')
+#expr.ccma <- readRDS('data/miRNomes_Expression.RDS')
 meta.ccma <- readRDS('data/miRNomes_Metadata.RDS')
 
 pca.ccma <- readRDS(file='data/PCA.Analysis.CCMA.RDS')
@@ -254,6 +254,10 @@ server <- function(input, output, session) {
   
   observeEvent(input$mir.id, {
     
+    
+    tcga.overview <- reactiveValues()
+    
+    
     output$tcga_boxplot <- renderPlot({
       
       mir.id <- input$mir.id
@@ -265,11 +269,42 @@ server <- function(input, output, session) {
       
       dataForBoxPlot <- data.frame(expr, group, project, mir=mir.name)
       
+      tcga.overview$box.data <- dataForBoxPlot
+      
       p <- tcgaboxplotFun(dataForBoxPlot)
+      
+      tcga.overview$box.plot <- p
+      
       p
     })
     
     
+    output$tcga.box.summ.downbttn.csv <- downloadHandler(
+      filename = function(){paste('box.csv', sep = '')},
+      
+      content = function(file){
+        write.csv(tcga.overview$box.data, file, row.names = FALSE, quote = F)
+      })
+    
+    output$tcga.box.summ.downbttn.png <- downloadHandler(
+      filename = function(){paste('box.png', sep = '')},
+      
+      content = function(file){
+        png(file, width = 1000, height = 500)
+        print(tcga.overview$box.plot)
+        dev.off()
+      })
+    
+    output$tcga.box.summ.downbttn.pdf <- downloadHandler(
+      filename = function(){paste('box.pdf', sep = '')},
+      
+      content = function(file){
+        pdf(file, width = 10, height = 5)
+        print(tcga.overview$box.plot)
+        dev.off()
+      })
+    
+
     output$tcga_rocplot_forest <- renderPlot({
       
       mir.id <- input$mir.id
@@ -330,11 +365,42 @@ server <- function(input, output, session) {
       dataForForestPlot$Project <- factor(dataForForestPlot$Project,
                                           levels = dataForForestPlot$Project[o])
       
+      tcga.overview$roc.forest.data <- dataForForestPlot[rev(o),]
+      
       p <- tcgaROCForestplotFun(dataForForestPlot)
+      
+      tcga.overview$roc.forest.plot <- p
+      
       p
     })
     
     
+    output$tcga.roc.forest.downbttn.csv <- downloadHandler(
+      filename = function(){paste('roc.forest.csv', sep = '')},
+      
+      content = function(file){
+        write.csv(tcga.overview$roc.forest.data, file, row.names = FALSE, quote = F)
+      })
+    
+    output$tcga.roc.forest.downbttn.png <- downloadHandler(
+      filename = function(){paste('roc.forest.png', sep = '')},
+      
+      content = function(file){
+        png(file, width = 1000, height = 500)
+        print(tcga.overview$roc.forest.plot)
+        dev.off()
+      })
+    
+    output$tcga.roc.forest.downbttn.pdf <- downloadHandler(
+      filename = function(){paste('roc.forest.pdf', sep = '')},
+      
+      content = function(file){
+        pdf(file, width = 10, height = 5)
+        print(tcga.overview$roc.forest.plot)
+        dev.off()
+      })
+    
+
     output$tcga_km_forest <- renderPlot({
       
       mir.id <- input$mir.id
@@ -379,9 +445,42 @@ server <- function(input, output, session) {
       dataForForestPlot$Project <- factor(dataForForestPlot$Project,
                                           levels = dataForForestPlot$Project[o])
       
+      tcga.overview$km.forest.data <- dataForForestPlot[rev(o),]
+      
       p <- tcgaKMForestplotFun(dataForForestPlot)
+      
+      tcga.overview$km.forest.plot <- p
+      
       p
+      
     })
+    
+    
+    output$tcga.km.forest.downbttn.csv <- downloadHandler(
+      filename = function(){paste('km.forest.csv', sep = '')},
+      
+      content = function(file){
+        write.csv(tcga.overview$km.forest.data, file, row.names = FALSE, quote = F)
+      })
+    
+    output$tcga.km.forest.downbttn.png <- downloadHandler(
+      filename = function(){paste('km.forest.png', sep = '')},
+      
+      content = function(file){
+        png(file, width = 1000, height = 650)
+        print(tcga.overview$km.forest.plot)
+        dev.off()
+      })
+    
+    output$tcga.km.forest.downbttn.pdf <- downloadHandler(
+      filename = function(){paste('km.forest.pdf', sep = '')},
+      
+      content = function(file){
+        pdf(file, width = 10, height = 6.5)
+        print(tcga.overview$km.forest.plot)
+        dev.off()
+      })
+    
     
     
     observeEvent(input$project.id, {
@@ -602,8 +701,8 @@ server <- function(input, output, session) {
   ######################## GENE-LEVEL ANALYSIS ###########################
   
   output$browser_datasets <- DT::renderDataTable({ccma.primary},
-                                                 options = list(pageLength = 8),
-                                                 selection = list(mode='multiple', selected=c(3,6,7,8))
+                                                 options = list(pageLength = 6), #8
+                                                 selection = list(mode='multiple', selected=c(3,6)) #,7,8
   )
   
   observeEvent(input$mir.id, {
@@ -617,9 +716,16 @@ server <- function(input, output, session) {
         idx <- sort(input$browser_datasets_rows_selected)
         datasets <- as.character(ccma.datasets[idx,'Dataset'])
         
+        expr.ccma <- list()
+        
+        for (dt in datasets) {
+          expr.ccma[[dt]] <- getCCMATable(dt)
+        }
+        
         lapply(datasets, function(dataset) 
         {group <- meta.ccma[[dataset]][,'Disease.Status']
         expr <- expr.ccma[[dataset]][mir.id,]
+        expr <- as.numeric(expr)
         
         dataForViolinPlot <- data.frame(expr, group, dataset,
                                         stringsAsFactors = F)
@@ -1357,7 +1463,8 @@ server <- function(input, output, session) {
     dataset <- as.character(ccma.datasets[idx,'Dataset'])
     
     meta <- meta.ccma[[dataset]]
-    expr <- expr.ccma[[dataset]]
+    #expr <- expr.ccma[[dataset]]
+    expr <- getCCMATable(dataset)
     
     groups <- meta$Group
     
