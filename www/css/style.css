@@ -86,3 +86,20 @@ input[type=number] {
 .nav.nav-pills.nav-stacked > .active {
     font-size: 18px;
 }
+
+
+.btn {
+  background-color: white;
+  border: 1px solid gray;
+  color: black;
+  padding: 4px 4px;
+  cursor: pointer;
+  font-size: 10px;
+  border-radius: 2px;
+}
+
+
+.btn:hover {
+  background-color: #1874CD;
+  border: 2px solid white;
+}
