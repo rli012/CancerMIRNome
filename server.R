@@ -165,6 +165,30 @@ geneset.id <- selectizeInput(inputId = "geneset.id", label=h5(strong('Gene Sets:
                              options = list(placeholder = 'Select a gene set',
                                             server = TRUE, selectOnTab=TRUE
                              ))
+#$("button.buttons-copy").css("border","grey");
+# table.download.button <- JS('$("button.buttons-copy").css("background","white");
+#                  $("button.buttons-copy").css("width",40);
+#                  $("button.buttons-copy").css("height",20);
+#                  $("button.buttons-copy").css("font-size",10);
+#                  $("button.buttons-csv").css("background","lightskyblue");
+#                  $("button.buttons-csv").css("width",40);
+#                  $("button.buttons-csv").css("height",24);
+#                  $("button.buttons-csv").css("font-size",10);
+#                  $("button.buttons-csv").css("border","white");
+#                  $("button.buttons-excel").css("background","lightskyblue");
+#                  $("button.buttons-excel").css("border","white");
+#                  $("button.buttons-excel").css("width",40);
+#                  $("button.buttons-excel").css("height",24);
+#                  $("button.buttons-excel").css("font-size",10);
+#                  return table;')
+
+
+table.download.button <- JS('$("button.buttons-copy").css("font-size",12);
+                            $("button.buttons-csv").css("font-size",12);
+                            $("button.buttons-excel").css("font-size",12);
+                            return table;')
+                
+
 
 ################################## Server #####################################
 
@@ -188,6 +212,8 @@ server <- function(input, output, session) {
   ######################## Information ###########################
   
   observeEvent(input$mir.id, {
+    
+    req(input$mir.id)
     
     output$mir.name <- renderUI({ 
       mir.id <- input$mir.id
@@ -254,6 +280,7 @@ server <- function(input, output, session) {
   
   observeEvent(input$mir.id, {
     
+    req(input$mir.id)
     
     tcga.overview <- reactiveValues()
     
@@ -321,6 +348,9 @@ server <- function(input, output, session) {
         
         idx <- which(project==prj)
         
+        n.tumor <- sum(group[idx]=='Tumor')
+        n.normal <- sum(group[idx]=='Normal')
+        
         roc.test <- roc(group[idx], expr[idx], plot=FALSE, ci=TRUE, auc=TRUE)
         ci.auc <- roc.test$ci
         
@@ -345,7 +375,7 @@ server <- function(input, output, session) {
         # pvalue <- formatC(auc.test$p.value, format = 'e', digits = 2)
         
         dataForForestPlot <- rbind(dataForForestPlot, 
-                                   c(auc, auc.ci.lower95, auc.ci.upper95)) #, pvalue
+                                   c(n.tumor, n.normal, auc, auc.ci.lower95, auc.ci.upper95)) #, pvalue
         
       }
       
@@ -355,19 +385,21 @@ server <- function(input, output, session) {
                                       row.names = projects.tcga.sub,
                                       stringsAsFactors = F)
       
-      colnames(dataForForestPlot) <- c('AUC','Lower95','Upper95') #,'P.Value'
+      colnames(dataForForestPlot) <- c('N.Tumor','N.Normal','AUC','Lower95','Upper95') #,'P.Value'
       
       dataForForestPlot$mir <- mir.name
       
       dataForForestPlot$Project <- projects.tcga.sub
       o <- order(dataForForestPlot$AUC, decreasing = F)
       
-      dataForForestPlot$Project <- factor(dataForForestPlot$Project,
-                                          levels = dataForForestPlot$Project[o])
+      dataForForestPlot <- dataForForestPlot[o,]
       
-      tcga.overview$roc.forest.data <- dataForForestPlot[rev(o),]
+      # dataForForestPlot$Project <- factor(dataForForestPlot$Project,
+      #                                     levels = dataForForestPlot$Project)
       
-      p <- tcgaROCForestplotFun(dataForForestPlot)
+      tcga.overview$roc.forest.data <- dataForForestPlot
+      
+      p <- tcgaROCForestplotFunT(dataForForestPlot)
       
       tcga.overview$roc.forest.plot <- p
       
@@ -395,7 +427,7 @@ server <- function(input, output, session) {
       filename = function(){paste('roc.forest.pdf', sep = '')},
       
       content = function(file){
-        pdf(file, width = 10, height = 5)
+        pdf(file, width = 13, height = 11)
         print(tcga.overview$roc.forest.plot)
         dev.off()
       })
@@ -425,7 +457,7 @@ server <- function(input, output, session) {
                                 stringsAsFactors = F)
         
         km <- kmTest(exprDa=surv.data$expr, daysToDeath=surv.data$os.time, vitalStatus=surv.data$os.status)
-        dataForForestPlot <- rbind(dataForForestPlot, as.numeric(format(km, digits=3)))
+        dataForForestPlot <- rbind(dataForForestPlot, c(length(idx), as.numeric(format(km, digits=3))))
         
       }
       
@@ -435,19 +467,21 @@ server <- function(input, output, session) {
                                       row.names = projects.tcga,
                                       stringsAsFactors = F)
       
-      colnames(dataForForestPlot) <- c('HR','Lower95','Upper95','P.Value')
+      colnames(dataForForestPlot) <- c('Patients','HR','Lower95','Upper95','P.Value')
       
       dataForForestPlot$mir <- mir.name
       
       dataForForestPlot$Project <- projects.tcga
       o <- order(dataForForestPlot$HR, decreasing = F)
       
-      dataForForestPlot$Project <- factor(dataForForestPlot$Project,
-                                          levels = dataForForestPlot$Project[o])
+      dataForForestPlot <- dataForForestPlot[o,]
       
-      tcga.overview$km.forest.data <- dataForForestPlot[rev(o),]
+      # dataForForestPlot$Project <- factor(dataForForestPlot$Project,
+      #                                     levels = dataForForestPlot$Project)
       
-      p <- tcgaKMForestplotFun(dataForForestPlot)
+      tcga.overview$km.forest.data <- dataForForestPlot
+      
+      p <- tcgaKMForestplotFunT(dataForForestPlot)
       
       tcga.overview$km.forest.plot <- p
       
@@ -467,7 +501,7 @@ server <- function(input, output, session) {
       filename = function(){paste('km.forest.png', sep = '')},
       
       content = function(file){
-        png(file, width = 1000, height = 650)
+        png(file, width = 1350, height = 1350)
         print(tcga.overview$km.forest.plot)
         dev.off()
       })
@@ -476,7 +510,7 @@ server <- function(input, output, session) {
       filename = function(){paste('km.forest.pdf', sep = '')},
       
       content = function(file){
-        pdf(file, width = 10, height = 6.5)
+        pdf(file, width = 13.5, height = 13.5)
         print(tcga.overview$km.forest.plot)
         dev.off()
       })
@@ -484,6 +518,8 @@ server <- function(input, output, session) {
     
     
     observeEvent(input$project.id, {
+      
+      tcga.mir.project <- reactiveValues()
       
       output$tcga_violinplot <- renderPlot({
         
@@ -498,10 +534,42 @@ server <- function(input, output, session) {
         dataForBoxPlot <- data.frame(expr, group, mir.id, project,
                                      stringsAsFactors = F)
         
+        tcga.mir.project$box.data <- dataForBoxPlot
+        
         p <- BoxPlotFun(dataForBoxPlot)
+
+        tcga.mir.project$box.plot <- p
+        
         p
         
       })
+      
+      
+      output$tcga.box.downbttn.csv <- downloadHandler(
+        filename = function(){paste('box.csv', sep = '')},
+        
+        content = function(file){
+          write.csv(tcga.mir.project$box.data, file, row.names = FALSE, quote = F)
+          })
+      
+      output$tcga.box.downbttn.png <- downloadHandler(
+        filename = function(){paste('box.png', sep = '')},
+        
+        content = function(file){
+          png(file, width = 500, height = 500)
+          print(tcga.mir.project$box.plot)
+          dev.off()
+        })
+      
+      output$tcga.box.downbttn.pdf <- downloadHandler(
+        filename = function(){paste('box.pdf', sep = '')},
+        
+        content = function(file){
+          pdf(file, width = 5, height = 5)
+          print(tcga.mir.project$box.plot)
+          dev.off()
+        })
+      
       
       output$tcga_rocplot <- renderPlot({
         
@@ -514,11 +582,47 @@ server <- function(input, output, session) {
         expr <- mir.tcga[[project]][mir.id,]
         
         dataForROCPlot <- data.frame(expr, group)
+        
+        tcga.mir.project$roc.data <- dataForROCPlot
+        
         dataForROCPlot$group <- ifelse(dataForROCPlot$group=='Normal',0,1)
         
         p <- rocplotFun(dataForROCPlot)
+        
+        tcga.mir.project$roc.plot <- p
+        
         p
+        
       })
+      
+      
+      output$tcga.roc.downbttn.csv <- downloadHandler(
+        filename = function(){paste('roc.csv', sep = '')},
+        
+        content = function(file){
+          write.csv(tcga.mir.project$roc.data, file, row.names = FALSE, quote = F)
+        })
+      
+      output$tcga.roc.downbttn.png <- downloadHandler(
+        filename = function(){paste('roc.png', sep = '')},
+        
+        content = function(file){
+          png(file, width = 500, height = 500)
+          print(tcga.mir.project$roc.plot)
+          dev.off()
+        })
+      
+      output$tcga.roc.downbttn.pdf <- downloadHandler(
+        filename = function(){paste('roc.pdf', sep = '')},
+        
+        content = function(file){
+          pdf(file, width = 5, height = 5)
+          print(tcga.mir.project$roc.plot)
+          dev.off()
+        })
+      
+      
+      
       
       output$tcga_km_plot <- renderPlot({
         
@@ -537,10 +641,40 @@ server <- function(input, output, session) {
                                     stringsAsFactors = F)
         
         p <- KMPlotFun(dataForKMPlot)
+        
+        tcga.mir.project$km.data <- dataForKMPlot
+        
+        tcga.mir.project$km.plot <- p
+        
         p
         
       })
       
+      
+      output$tcga.km.downbttn.csv <- downloadHandler(
+        filename = function(){paste('km.csv', sep = '')},
+        
+        content = function(file){
+          write.csv(tcga.mir.project$km.data, file, row.names = FALSE, quote = F)
+        })
+      
+      output$tcga.km.downbttn.png <- downloadHandler(
+        filename = function(){paste('km.png', sep = '')},
+        
+        content = function(file){
+          png(file, width = 500, height = 500)
+          print(tcga.mir.project$km.plot)
+          dev.off()
+        })
+      
+      output$tcga.km.downbttn.pdf <- downloadHandler(
+        filename = function(){paste('km.pdf', sep = '')},
+        
+        content = function(file){
+          pdf(file, width = 5, height = 5)
+          print(tcga.mir.project$km.plot)
+          dev.off()
+        })
       
     })
     
@@ -558,13 +692,7 @@ server <- function(input, output, session) {
       cor.table
       
     }, 
-    callback=JS('$("button.buttons-copy").css("background","lightskyblue");
-                 $("button.buttons-copy").css("border","white");
-                 $("button.buttons-csv").css("background","lightskyblue");
-                 $("button.buttons-csv").css("border","white");
-                 $("button.buttons-excel").css("background","lightskyblue");
-                 $("button.buttons-excel").css("border","white");
-                 return table;'),
+    callback=table.download.button,
     options = list(pageLength = 5, dom = 'lfrtBp', buttons = c('copy', 'csv', 'excel')), #i
     extensions = "Buttons",
     selection = list(mode='single', selected=1),
@@ -572,6 +700,9 @@ server <- function(input, output, session) {
     )
     
     observeEvent(input$correlation_rows_selected, {
+      
+      tcga.cor <- reactiveValues()
+      
       output$cor_plot <- renderPlot({
         
         mir <- input$mir.id
@@ -604,9 +735,41 @@ server <- function(input, output, session) {
                                       coef, p.val, stringsAsFactors = F)
         
         p <- ExprCorrPlotFun(dataForCorrPlot)
+
+        tcga.cor$cor.data <- dataForCorrPlot
+        
+        tcga.cor$cor.plot <- p
+        
         p
         
       })
+      
+      
+      output$tcga.cor.downbttn.csv <- downloadHandler(
+        filename = function(){paste('cor.csv', sep = '')},
+        
+        content = function(file){
+          write.csv(tcga.cor$cor.data, file, row.names = FALSE, quote = F)
+        })
+      
+      output$tcga.cor.downbttn.png <- downloadHandler(
+        filename = function(){paste('cor.png', sep = '')},
+        
+        content = function(file){
+          png(file, width = 500, height = 500)
+          print(tcga.cor$cor.plot)
+          dev.off()
+        })
+      
+      output$tcga.cor.downbttn.pdf <- downloadHandler(
+        filename = function(){paste('cor.pdf', sep = '')},
+        
+        content = function(file){
+          pdf(file, width = 6, height = 5)
+          print(tcga.cor$cor.plot)
+          dev.off()
+        })
+      
       
     })
     
@@ -638,22 +801,17 @@ server <- function(input, output, session) {
       enrich.table
       
     }, 
-    callback=JS('$("button.buttons-copy").css("background","lightskyblue");
-                 $("button.buttons-copy").css("border","white");
-                $("button.buttons-csv").css("background","lightskyblue");
-                $("button.buttons-csv").css("border","white");
-                $("button.buttons-excel").css("background","lightskyblue");
-                $("button.buttons-excel").css("border","white");
-                return table;'),
+    callback=table.download.button,
     options = list(pageLength = 5, dom = 'lfrtBp', buttons = c('copy', 'csv', 'excel')), #i
     extensions = "Buttons",
     selection = list(mode='none', selected=1), ### === not selectable
     server = FALSE
     )
     
+    tcga.enrich <- reactiveValues()
     
     output$enrichment_bar_plot <- renderPlot({
-      
+
       mir <- input$mir.id
       geneset <- input$geneset.id
       
@@ -669,9 +827,41 @@ server <- function(input, output, session) {
       }
       
       p <- EnrichmentBarPlotFun(dataForBarPlot)
+      
+      tcga.enrich$enrich.bar.data <- dataForBarPlot
+      
+      tcga.enrich$enrich.bar.plot <- p
+      
       p
       
     })
+    
+    
+    output$enrich.bar.downbttn.csv <- downloadHandler(
+      filename = function(){paste('enrich.bar.csv', sep = '')},
+      
+      content = function(file){
+        write.csv(tcga.enrich$enrich.bar.data, file, row.names = FALSE, quote = F)
+      })
+    
+    output$enrich.bar.downbttn.png <- downloadHandler(
+      filename = function(){paste('enrich.bar.png', sep = '')},
+      
+      content = function(file){
+        png(file, width = 1000, height = 700)
+        print(tcga.enrich$enrich.bar.plot)
+        dev.off()
+      })
+    
+    output$enrich.bar.downbttn.pdf <- downloadHandler(
+      filename = function(){paste('enrich.bar.pdf', sep = '')},
+      
+      content = function(file){
+        pdf(file, width = 10, height = 7)
+        print(tcga.enrich$enrich.bar.plot)
+        dev.off()
+      })
+    
     
     output$enrichment_bubble_plot <- renderPlot({
       
@@ -690,9 +880,40 @@ server <- function(input, output, session) {
       }
       
       p <- EnrichmentBubblePlotFun(dataForBubblePlot)
+      
+      tcga.enrich$enrich.bubble.data <- dataForBubblePlot
+      
+      tcga.enrich$enrich.bubble.plot <- p
+      
       p
       
     })
+    
+    
+    output$enrich.bubble.downbttn.csv <- downloadHandler(
+      filename = function(){paste('enrich.bubble.csv', sep = '')},
+      
+      content = function(file){
+        write.csv(tcga.enrich$enrich.bubble.data, file, row.names = FALSE, quote = F)
+      })
+    
+    output$enrich.bubble.downbttn.png <- downloadHandler(
+      filename = function(){paste('enrich.bubble.png', sep = '')},
+      
+      content = function(file){
+        png(file, width = 1000, height = 700)
+        print(tcga.enrich$enrich.bubble.plot)
+        dev.off()
+      })
+    
+    output$enrich.bubble.downbttn.pdf <- downloadHandler(
+      filename = function(){paste('enrich.bubble.pdf', sep = '')},
+      
+      content = function(file){
+        pdf(file, width = 10, height = 7)
+        print(tcga.enrich$enrich.bubble.plot)
+        dev.off()
+      })
     
   })
   
@@ -757,14 +978,49 @@ server <- function(input, output, session) {
         
       })
       
+      
+      # output$circ_violin_plot <- renderUI({
+      #   
+      #   idx <- sort(input$browser_datasets_rows_selected)
+      #   datasets <- as.character(ccma.datasets[idx,'Dataset'])
+      #   
+      #   group <- meta.ccma[[dataset]][,'Disease.Status']
+      #   
+      #   
+      #   
+      #   if (length(unique(group))<=5) {
+      #     plot.width <- reactive(500)
+      #   } else if (length(unique(group))>5 & length(unique(group))<10){
+      #     plot.width <- reactive(800)
+      #   } else if (length(unique(group))>=10){
+      #     plot.width <- reactive(1000)
+      #   } else {
+      #     plot.width <- reactive(100 * length(unique(group)))
+      #   }
+      #   return (plot.width)
+      #   
+      #   })
+      #   
+      #   
+      #   lapply(seq_along(input$browser_datasets_rows_selected),
+      #          function(n) {
+      #            return(plot_overlay_ui(paste0("n", n), height=500, width=plot.widths[[n]]()))
+      #          })
+      #   
+      #   
+      #   
+      # })
+      
+      
+      
       output$multi_plot_ui <- renderUI({
-        
+
         idx <- sort(input$browser_datasets_rows_selected)
         datasets <- as.character(ccma.datasets[idx,'Dataset'])
-        
-        plot.widths <- lapply(datasets, function(dataset) 
+
+        plot.widths <- lapply(datasets, function(dataset)
         {group <- meta.ccma[[dataset]][,'Disease.Status']
-        
+
         if (length(unique(group))<=5) {
           plot.width <- reactive(500)
         } else if (length(unique(group))>5 & length(unique(group))<10){
@@ -775,16 +1031,16 @@ server <- function(input, output, session) {
           plot.width <- reactive(100 * length(unique(group)))
         }
         return (plot.width)
-        
+
         })
-        
-        
+
+
         lapply(seq_along(input$browser_datasets_rows_selected),
                function(n) {
                  return(plot_overlay_ui(paste0("n", n), height=500, width=plot.widths[[n]]()))
                })
       })
-      
+
       lapply(seq_along(input$browser_datasets_rows_selected),
              function(i){
                callModule(plot_overlay_server,
@@ -991,13 +1247,7 @@ server <- function(input, output, session) {
       
       
     }, 
-    callback=JS('$("button.buttons-copy").css("background","lightskyblue");
-                 $("button.buttons-copy").css("border","white");
-                 $("button.buttons-csv").css("background","lightskyblue");
-                 $("button.buttons-csv").css("border","white");
-                 $("button.buttons-excel").css("background","lightskyblue");
-                 $("button.buttons-excel").css("border","white");
-                 return table;'),
+    callback=table.download.button,
     options = list(pageLength = 10, dom = 'lfrtBp', buttons = c('copy', 'csv', 'excel')), #i
     extensions = "Buttons",
     selection = list(mode='none', selected=1), ### === not selectable
@@ -1005,7 +1255,7 @@ server <- function(input, output, session) {
     server = FALSE
     )
     
-    
+    high.expr.tcga <- reactiveValues()
     output$high.expr.barplot.tcga <- renderPlot({
       
       dataForBarPlot <- expr.high.tcga[[project]][1:50,]
@@ -1013,11 +1263,39 @@ server <- function(input, output, session) {
       dataForBarPlot$miRNA.ID <- factor(dataForBarPlot$miRNA.ID, levels=dataForBarPlot$miRNA.ID)
       
       p <- mirBarPlotFun(dataForBarPlot)
-      
       #p <- ggplotly(p, tooltip=c("x", "y"))
+      
+      high.expr.tcga$bar.data <- dataForBarPlot
+      high.expr.tcga$bar.plot <- p
+      
       p
       
     })
+    
+    output$high.expr.tcga.downbttn.csv <- downloadHandler(
+      filename = function(){paste('barplot.csv', sep = '')},
+      
+      content = function(file){
+        write.csv(high.expr.tcga$bar.data, file, row.names = FALSE, quote = F)
+      })
+    
+    output$high.expr.tcga.downbttn.png <- downloadHandler(
+      filename = function(){paste('barplot.png', sep = '')},
+      
+      content = function(file){
+        png(file, width = 1200, height = 500)
+        print(high.expr.tcga$bar.plot)
+        dev.off()
+      })
+    
+    output$high.expr.tcga.downbttn.pdf <- downloadHandler(
+      filename = function(){paste('barplot.pdf', sep = '')},
+      
+      content = function(file){
+        pdf(file, width = 12, height = 5)
+        print(high.expr.tcga$bar.plot)
+        dev.off()
+      })
     
     
     
@@ -1122,6 +1400,8 @@ server <- function(input, output, session) {
       
       shinyjs::hide('table_sample_type_tcga')
       shinyjs::hide('volcano_sample_type_tcga')
+      shinyjs::hide('volcano.tcga.downbttn.csv')
+      shinyjs::hide('volcano.tcga.downbttn.pdf')
       
       observeEvent(input$deg.submit.tcga, {
         
@@ -1180,13 +1460,46 @@ server <- function(input, output, session) {
         
         shinyjs::show('table_sample_type_tcga')
         shinyjs::show('volcano_sample_type_tcga')
+        shinyjs::show('volcano.tcga.downbttn.csv')
+        shinyjs::show('volcano.tcga.downbttn.pdf')
+        
+        tcga.volcano <- reactiveValues()
         
         output$volcano_sample_type_tcga <- renderPlot({
           
           p <- volcanoPlotFun(dataForVolcanoPlot, logFcThreshold, adjPvalThreshold)
+          
+          tcga.volcano$volcano.data <- dataForVolcanoPlot
+          tcga.volcano$volcano.plot <- p
+          
           p
           
         })
+        
+        output$volcano.tcga.downbttn.csv <- downloadHandler(
+          filename = function(){paste('volcano.csv', sep = '')},
+          
+          content = function(file){
+            write.csv(tcga.volcano$volcano.data, row.names = FALSE, quote = F)
+          })
+        
+        output$volcano.tcga.downbttn.png <- downloadHandler(
+          filename = function(){paste('volcano.png', sep = '')},
+          
+          content = function(file){
+            png(file, width = 600, height = 600)
+            print(tcga.volcano$volcano.plot)
+            dev.off()
+          })
+        
+        output$volcano.tcga.downbttn.pdf <- downloadHandler(
+          filename = function(){paste('volcano.pdf', sep = '')},
+          
+          content = function(file){
+            pdf(file, width = 6, height = 6)
+            print(tcga.volcano$volcano.plot)
+            dev.off()
+          })
         
         
         output$table_sample_type_tcga <- DT::renderDataTable({
@@ -1196,13 +1509,7 @@ server <- function(input, output, session) {
           dataForVolcanoPlot
           
         }, 
-        callback=JS('$("button.buttons-copy").css("background","lightskyblue");
-                 $("button.buttons-copy").css("border","white");
-                 $("button.buttons-csv").css("background","lightskyblue");
-                 $("button.buttons-csv").css("border","white");
-                 $("button.buttons-excel").css("background","lightskyblue");
-                 $("button.buttons-excel").css("border","white");
-                 return table;'),
+        callback=table.download.button,
         options = list(pageLength = 10, dom = 'lfrtBp', buttons = c('copy', 'csv', 'excel')), #i
         extensions = "Buttons",
         selection = list(mode='none', selected=1), ### === not selectable
@@ -1295,13 +1602,7 @@ server <- function(input, output, session) {
       roc.tcga[[project]]
       
     },
-    callback=JS('$("button.buttons-copy").css("background","lightskyblue");
-                 $("button.buttons-copy").css("border","white");
-                 $("button.buttons-csv").css("background","lightskyblue");
-                 $("button.buttons-csv").css("border","white");
-                 $("button.buttons-excel").css("background","lightskyblue");
-                 $("button.buttons-excel").css("border","white");
-                 return table;'),
+    callback=table.download.button,
     options = list(pageLength = 10, dom = 'lfrtBp', buttons = c('copy', 'csv', 'excel')), #i
     extensions = "Buttons",
     selection = list(mode='none', selected=1), ### === not selectable
@@ -1337,13 +1638,7 @@ server <- function(input, output, session) {
       }
       
     },
-    callback=JS('$("button.buttons-copy").css("background","lightskyblue");
-                 $("button.buttons-copy").css("border","white");
-                 $("button.buttons-csv").css("background","lightskyblue");
-                 $("button.buttons-csv").css("border","white");
-                 $("button.buttons-excel").css("background","lightskyblue");
-                 $("button.buttons-excel").css("border","white");
-                 return table;'),
+    callback=table.download.button,
     options = list(pageLength = 10, dom = 'lfrtBp', buttons = c('copy', 'csv', 'excel')), #i
     extensions = "Buttons",
     selection = list(mode='none', selected=1), ### === not selectable
@@ -1359,13 +1654,7 @@ server <- function(input, output, session) {
       km.tcga[[project]]
       
     },
-    callback=JS('$("button.buttons-copy").css("background","lightskyblue");
-                 $("button.buttons-copy").css("border","white");
-                $("button.buttons-csv").css("background","lightskyblue");
-                $("button.buttons-csv").css("border","white");
-                $("button.buttons-excel").css("background","lightskyblue");
-                $("button.buttons-excel").css("border","white");
-                return table;'),
+    callback=table.download.button,
     options = list(pageLength = 10, dom = 'lfrtBp', buttons = c('copy', 'csv', 'excel')), #i
     extensions = "Buttons",
     selection = list(mode='none', selected=1), ### === not selectable
@@ -1378,13 +1667,7 @@ server <- function(input, output, session) {
       coxph.tcga[[project]]
       
     },
-    callback=JS('$("button.buttons-copy").css("background","lightskyblue");
-                 $("button.buttons-copy").css("border","white");
-                $("button.buttons-csv").css("background","lightskyblue");
-                $("button.buttons-csv").css("border","white");
-                $("button.buttons-excel").css("background","lightskyblue");
-                $("button.buttons-excel").css("border","white");
-                return table;'),
+    callback=table.download.button,
     options = list(pageLength = 10, dom = 'lfrtBp', buttons = c('copy', 'csv', 'excel')), #i
     extensions = "Buttons",
     selection = list(mode='none', selected=1), ### === not selectable
@@ -1409,13 +1692,7 @@ server <- function(input, output, session) {
       lasso.tcga[[project]]
       
     },
-    callback=JS('$("button.buttons-copy").css("background","lightskyblue");
-                 $("button.buttons-copy").css("border","white");
-                $("button.buttons-csv").css("background","lightskyblue");
-                $("button.buttons-csv").css("border","white");
-                $("button.buttons-excel").css("background","lightskyblue");
-                $("button.buttons-excel").css("border","white");
-                return table;'),
+    callback=table.download.button,
     options = list(pageLength = 10, dom = 'lfrtBp', buttons = c('copy', 'csv', 'excel')), #i
     extensions = "Buttons",
     selection = list(mode='none', selected=1), ### === not selectable
@@ -1662,13 +1939,7 @@ server <- function(input, output, session) {
       expr.high.ccma[[dataset]]
       
     },
-    callback=JS('$("button.buttons-copy").css("background","lightskyblue");
-                 $("button.buttons-copy").css("border","white");
-                $("button.buttons-csv").css("background","lightskyblue");
-                $("button.buttons-csv").css("border","white");
-                $("button.buttons-excel").css("background","lightskyblue");
-                $("button.buttons-excel").css("border","white");
-                return table;'),
+    callback=table.download.button,
     options = list(pageLength = 10, dom = 'lfrtBp', buttons = c('copy', 'csv', 'excel')), #i
     extensions = "Buttons",
     selection = list(mode='none', selected=1), ### === not selectable
@@ -1770,13 +2041,7 @@ server <- function(input, output, session) {
         dataForVolcanoPlot
         
       }, 
-      callback=JS('$("button.buttons-copy").css("background","lightskyblue");
-                 $("button.buttons-copy").css("border","white");
-                $("button.buttons-csv").css("background","lightskyblue");
-                $("button.buttons-csv").css("border","white");
-                $("button.buttons-excel").css("background","lightskyblue");
-                $("button.buttons-excel").css("border","white");
-                return table;'),
+      callback=table.download.button,
       options = list(pageLength = 10, dom = 'lfrtBp', buttons = c('copy', 'csv', 'excel')), #i
       extensions = "Buttons",
       selection = list(mode='none', selected=1), ### === not selectable
@@ -1857,13 +2122,7 @@ server <- function(input, output, session) {
         dataForForestPlot
         
       },
-      callback=JS('$("button.buttons-copy").css("background","lightskyblue");
-                 $("button.buttons-copy").css("border","white");
-                  $("button.buttons-csv").css("background","lightskyblue");
-                  $("button.buttons-csv").css("border","white");
-                  $("button.buttons-excel").css("background","lightskyblue");
-                  $("button.buttons-excel").css("border","white");
-                  return table;'),
+      callback=table.download.button,
       options = list(pageLength = 10, dom = 'lfrtBp', buttons = c('copy', 'csv', 'excel')), #i
       extensions = "Buttons",
       selection = list(mode='none', selected=1), ### === not selectable
@@ -1960,13 +2219,7 @@ server <- function(input, output, session) {
         feature
         
       },
-      callback=JS('$("button.buttons-copy").css("background","lightskyblue");
-                 $("button.buttons-copy").css("border","white");
-                  $("button.buttons-csv").css("background","lightskyblue");
-                  $("button.buttons-csv").css("border","white");
-                  $("button.buttons-excel").css("background","lightskyblue");
-                  $("button.buttons-excel").css("border","white");
-                  return table;'),
+      callback=table.download.button,
       options = list(pageLength = 10, dom = 'lfrtBp', buttons = c('copy', 'csv', 'excel')), #i
       extensions = "Buttons",
       selection = list(mode='none', selected=1), ### === not selectable
