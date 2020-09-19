@@ -249,7 +249,7 @@ tab_home <- dashboardPage(
       br(),
       h3(strong("Cite")),
       tags$p('Please cite the following publication:
-             Li, R., et al., CancerMIRNome: a web server for cancer miRNome interactive analysis', style = "font-size: 150%;")
+             Li, R., et al., CancerMIRNome: a web server for cancer miRNome interactive analysis and visualization', style = "font-size: 150%;")
       )
     
     )
@@ -302,24 +302,38 @@ tab_query <- dashboardPage(
                            
                            column(12,
                                   column(1),
-                                  column(10,
+                                  column(11,
                                          h5("miRNA Expression in Tumor and Normal Samples in TCGA", align = 'center'),
                                          h6("(Wilcoxon rank-sum test, ***: P < 0.001; **: P < 0.01; *: P < 0.05; ns: P > 0.05)", align = 'center'),
                                          br(),
                                          withSpinner(plotOutput('tcga_boxplot',width = 900, height = 400), # 1100 * 500
                                                      type = 1)
-                                  )
+                                         
+                                  ),
+                                  column(10),
+                                  column(2,
+                                         downloadButton(outputId='tcga.box.summ.downbttn.csv', label = "CSV"),
+                                         #downloadButton(outputId='tcga.box.summ.downbttn.png', label = "PNG"),
+                                         downloadButton(outputId='tcga.box.summ.downbttn.pdf', label = "PDF")
+                                         )
+                                  
                            ),
                            
                            column(12,
                                   #br(),
                                   tags$hr(style="border-top: 1px dashed #A9A9A9"),
                                   column(1),
-                                  column(10,
+                                  column(11,
                                          h5("ROC Analysis Between Tumor and Normal Samples in TCGA", align = 'center'),
                                          br(),
-                                         withSpinner(plotOutput('tcga_rocplot_forest',width = 900, height = 400), # 1100 * 500
+                                         withSpinner(plotOutput('tcga_rocplot_forest',width = 950, height = 800), # 1100 * 500
                                                      type = 1)
+                                  ),
+                                  column(10),
+                                  column(2,
+                                         downloadButton(outputId='tcga.roc.forest.downbttn.csv', label = "CSV"),
+                                         #downloadButton(outputId='tcga.roc.forest.downbttn.png', label = "PNG"),
+                                         downloadButton(outputId='tcga.roc.forest.downbttn.pdf', label = "PDF")
                                   )
                            ),
                            
@@ -327,12 +341,18 @@ tab_query <- dashboardPage(
                                   #br(),
                                   tags$hr(style="border-top: 1px dashed #A9A9A9"),
                                   column(1),
-                                  column(10,
+                                  column(11,
                                          h5("Kaplan Meier Survival Analysis of Overall Survival in TCGA", align = 'center'),
                                          h6("(Low- and high-expression groups were separated by median values)", align = 'center'),
                                          br(),
-                                         withSpinner(plotOutput('tcga_km_forest',width = 900, height = 525), # 1100 * 600
+                                         withSpinner(plotOutput('tcga_km_forest',width = 950, height = 950), # 1100 * 600
                                                      type = 1)
+                                  ),
+                                  column(10),
+                                  column(2,
+                                         downloadButton(outputId='tcga.km.forest.downbttn.csv', label = "CSV"),
+                                         #downloadButton(outputId='tcga.km.forest.downbttn.png', label = "PNG"),
+                                         downloadButton(outputId='tcga.km.forest.downbttn.pdf', label = "PDF")
                                   )
                                   
                                   
@@ -349,13 +369,39 @@ tab_query <- dashboardPage(
                                   
                                   column(4, 
                                          h5('Box Plot of miRNA Expression', align='center'),
-                                         plotOutput('tcga_violinplot',width = 350, height = 350)),
+                                         plotOutput('tcga_violinplot',width = 350, height = 350),
+                                         br(),
+                                         column(7),
+                                         column(5,
+                                                downloadButton(outputId='tcga.box.downbttn.csv', label = "CSV"),
+                                                #downloadButton(outputId='tcga.box.downbttn.png', label = "PNG"),
+                                                downloadButton(outputId='tcga.box.downbttn.pdf', label = "PDF")
+                                                )
+                                         
+                                         ),
+                                  
                                   column(4, 
                                          h5('ROC Analysis (Tumor vs. Normal)', align='center'),
-                                         plotOutput('tcga_rocplot',width = 350, height = 350)),
+                                         plotOutput('tcga_rocplot',width = 350, height = 350),
+                                         br(),
+                                         column(7),
+                                         column(5,
+                                                downloadButton(outputId='tcga.roc.downbttn.csv', label = "CSV"),
+                                                #downloadButton(outputId='tcga.roc.downbttn.png', label = "PNG"),
+                                                downloadButton(outputId='tcga.roc.downbttn.pdf', label = "PDF")
+                                                )
+                                         ),
                                   column(4, 
                                          h5('Kaplan Meier Survival Analysis', align='center'),
-                                         plotOutput('tcga_km_plot',width = 350, height = 350))
+                                         plotOutput('tcga_km_plot',width = 350, height = 350),
+                                         br(),
+                                         column(7),
+                                         column(5,
+                                                downloadButton(outputId='tcga.km.downbttn.csv', label = "CSV"),
+                                                #downloadButton(outputId='tcga.km.downbttn.png', label = "PNG"),
+                                                downloadButton(outputId='tcga.km.downbttn.pdf', label = "PDF")
+                                         )
+                                  )
                            )
                   ),
                   
@@ -375,8 +421,13 @@ tab_query <- dashboardPage(
                                   column(6, 
                                          h5('miRNA-Target Correlation Plot', align='center'),
                                          #br(), 
-                                         plotOutput('cor_plot',width = 500, height = 400)),
-                                  column(3)
+                                         withSpinner(plotOutput('cor_plot',width = 500, height = 400), type=1)),
+                                  column(7),
+                                  column(5,
+                                         downloadButton(outputId='tcga.cor.downbttn.csv', label = "CSV"),
+                                         #downloadButton(outputId='tcga.cor.downbttn.png', label = "PNG"),
+                                         downloadButton(outputId='tcga.cor.downbttn.pdf', label = "PDF")
+                                  )
                            )
                   ),
                   
@@ -397,6 +448,12 @@ tab_query <- dashboardPage(
                                   column(10,
                                          h5('Bar Plot of the Top 30 Enriched Pathways', align='center'),
                                          plotOutput('enrichment_bar_plot',width = 800, height = 500)
+                                  ),
+                                  column(8),
+                                  column(4,
+                                         downloadButton(outputId='enrich.bar.downbttn.csv', label = "CSV"),
+                                         #downloadButton(outputId='enrich.bar.downbttn.png', label = "PNG"),
+                                         downloadButton(outputId='enrich.bar.downbttn.pdf', label = "PDF")
                                   )
                            ),
                            
@@ -407,6 +464,12 @@ tab_query <- dashboardPage(
                                   column(10,
                                          h5('Bubble Plot of the Top 30 Enriched Pathways', align='center'),
                                          plotOutput('enrichment_bubble_plot',width = 800, height = 500)
+                                  ),
+                                  column(8),
+                                  column(4,
+                                         downloadButton(outputId='enrich.bubble.downbttn.csv', label = "CSV"),
+                                         #downloadButton(outputId='enrich.bubble.downbttn.png', label = "PNG"),
+                                         downloadButton(outputId='enrich.bubble.downbttn.pdf', label = "PDF")
                                   )
                            )
                   ),
@@ -420,7 +483,14 @@ tab_query <- dashboardPage(
                            column(12, 
                                   h5('Expression of the miRNA in the Selected Circulating miRNome Datasets', align='center'),
                                   br(),
-                                  withSpinner(uiOutput("multi_plot_ui"),type=1))
+                                  withSpinner(uiOutput("multi_plot_ui"),type=1),
+                                  column(4),
+                                  column(6,
+                                         downloadButton(outputId='circ.expr.downbttn.csv', label = "CSV"),
+                                         #downloadButton(outputId='circ.expr.downbttn.png', label = "PNG"),
+                                         downloadButton(outputId='circ.expr.downbttn.pdf', label = "PDF")
+                                         )
+                                  )
                   )
                   
       )
@@ -472,28 +542,28 @@ tab_tcga <- dashboardPage(
                  br(),
                  
                  box(title = 'Sample Type',
-                     status = "info", solidHeader = TRUE, collapsible = TRUE,
+                     status = "info", solidHeader = TRUE, collapsible = FALSE,
                      width = 4,
                      height = 375,
                      plotlyOutput('pie_sample_type_tcga', width='100%', height='300px')
                  ),
                  
                  box(title = 'Pathological Stage',
-                     status = "info", solidHeader = TRUE, collapsible = TRUE,
+                     status = "info", solidHeader = TRUE, collapsible = FALSE,
                      width = 4,
                      height = 375,
                      plotlyOutput('pie_pstage_tcga', width='100%', height='300px')
                  ),
                  
                  box(title = 'Clinical Stage',
-                     status = "info", solidHeader = TRUE, collapsible = TRUE,
+                     status = "info", solidHeader = TRUE, collapsible = FALSE,
                      width = 4,
                      height = 375,
                      plotlyOutput('pie_cstage_tcga', width='100%', height='300px')
                  ),
                  
                  box(title = 'Age at Diagnosis',
-                     status = "info", solidHeader = TRUE, collapsible = TRUE,
+                     status = "info", solidHeader = TRUE, collapsible = FALSE,
                      width = 4,
                      height = 375,
                      plotlyOutput('histogram_age_tcga', width='100%', height='300px')
@@ -501,14 +571,14 @@ tab_tcga <- dashboardPage(
                  
                  
                  box(title = 'Overall Survival Status',
-                     status = "info", solidHeader = TRUE, collapsible = TRUE,
+                     status = "info", solidHeader = TRUE, collapsible = FALSE,
                      width = 4,
                      height = 375,
                      plotlyOutput('pie_os_status_tcga', width='100%', height='300px')
                  ),
                  
                  box(title = 'Overall Survival',
-                     status = "info", solidHeader = TRUE, collapsible = TRUE,
+                     status = "info", solidHeader = TRUE, collapsible = FALSE,
                      width = 4,
                      height = 375,
                      plotlyOutput('km_os_time_tcga', width='100%', height='300px')
@@ -526,7 +596,15 @@ tab_tcga <- dashboardPage(
                         br(),
                         tags$hr(style="border-top: 1px dashed #A9A9A9"),
                         h5('Bar Plot of the Top 50 Highly Expressed miRNAs', align='center'),
-                        plotOutput('high.expr.barplot.tcga')
+                        plotOutput('high.expr.barplot.tcga'),
+                        
+                        column(10),
+                        column(2,
+                               downloadButton(outputId='high.expr.tcga.downbttn.csv', label = "CSV"),
+                               #downloadButton(outputId='circ.expr.downbttn.png', label = "PNG"),
+                               downloadButton(outputId='high.expr.tcga.downbttn.pdf', label = "PDF")
+                        )
+                        
                  )
         ),
         
@@ -589,7 +667,7 @@ tab_tcga <- dashboardPage(
                                
                                column(1),
                                column(6, actionButton(inputId = 'deg.submit.tcga', label = strong('Submit'), icon=icon("check"), 
-                                                      style="color: #fff; background-color: #4095c9; border-color: #368dc2", 
+                                                      style="color: #fff; background-color: #4095c9; border-color: #368dc2; border-width: 2px; font-size: 12px;", 
                                                       class = 'btn-sm', width = 200))
                                # column(6, shinyWidgets::actionBttn(inputId = 'deg.submit.tcga', label = 'Submit', icon=icon("check"), 
                                #                                    style = 'fill', color = 'default', size = 'sm', block=TRUE))
@@ -605,15 +683,14 @@ tab_tcga <- dashboardPage(
                         column(3),
                         column(6,
                                plotOutput('volcano_sample_type_tcga', height = 500)
-                        )#,
-                        # column(1),
-                        # column(4,
-                        #        sliderInput(inputId = "foldchange.tcga", label = h5(strong('Fold Change')),
-                        #                    min = 0, max = 3,  step = 0.1, value = 2, width = 300),
-                        # 
-                        #        sliderInput(inputId = "fdr.tcga", label = h5(strong('BH Adjusted P Value')),
-                        #                    min = 0, max = 0.1,  step = 0.01, value = 0.01, width = 300)
-                        # )
+                        ),
+                        
+                        column(7),
+                        column(5,
+                               downloadButton(outputId='volcano.tcga.downbttn.csv', label = "CSV"),
+                               #downloadButton(outputId='circ.expr.downbttn.png', label = "PNG"),
+                               downloadButton(outputId='volcano.tcga.downbttn.pdf', label = "PDF")
+                        )
                  ),
                  
                  
@@ -774,14 +851,14 @@ tab_circulating <- dashboardPage(
                            br(),
                            
                            box(title = 'Disease Status',
-                               status = "info", solidHeader = TRUE, collapsible = TRUE,
+                               status = "info", solidHeader = TRUE, collapsible = FALSE,
                                width = 6,
                                height = 500,
                                plotlyOutput('pie_disease_status')
                            ),
                            
                            box(title = 'Subgroups',
-                               status = "info", solidHeader = TRUE, collapsible = TRUE,
+                               status = "info", solidHeader = TRUE, collapsible = FALSE,
                                width = 6,
                                height = 500,
                                plotlyOutput('pie_group')
@@ -833,7 +910,7 @@ tab_circulating <- dashboardPage(
                                          
                                          #column(1),
                                          column(6, actionButton(inputId = 'deg.submit', label = strong('Submit'), icon=icon("check"), 
-                                                                style="color: #fff; background-color: #4095c9; border-color: #368dc2", 
+                                                                style="color: #fff; background-color: #4095c9; border-color: #368dc2; border-width: 2px; font-size: 12px;",
                                                                 class = 'btn-sm', width = 200))
                                          
                                   )
@@ -882,7 +959,7 @@ tab_circulating <- dashboardPage(
                                          column(4),
                                          
                                          column(4, actionButton(inputId = 'roc.submit', label = strong('ROC Analysis'), icon=icon("check"), 
-                                                                style="color: #fff; background-color: #4095c9; border-color: #368dc2", 
+                                                                style="color: #fff; background-color: #4095c9; border-color: #368dc2; border-width: 2px; font-size: 12px;",
                                                                 class = 'btn-sm', width = 250))
                                   )
                            ),
@@ -917,7 +994,7 @@ tab_circulating <- dashboardPage(
                                          column(4),
                                          
                                          column(4, actionButton(inputId = 'feature.selection.submit', label = strong('LASSO Feature Selection'), icon=icon("check"), 
-                                                                style="color: #fff; background-color: #4095c9; border-color: #368dc2", 
+                                                                style="color: #fff; background-color: #4095c9; border-color: #368dc2; border-width: 2px; font-size: 12px;",
                                                                 class = 'btn-sm', width = 250))
                                   )
                            ),
