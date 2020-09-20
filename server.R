@@ -23,6 +23,7 @@ library(digest)
 library(pheatmap)
 library(plotly)
 library(glmnet)
+library(heatmaply)
 
 
 library(dashboardthemes)
@@ -678,6 +679,7 @@ server <- function(input, output, session) {
       
     })
     
+    cor.list <- reactiveValues()
     
     output$correlation <- DT::renderDataTable({
       
@@ -689,6 +691,7 @@ server <- function(input, output, session) {
       project <- input$project.id.cor
       
       cor.table <- getCorTable(project = project, mir = mir)
+      cor.list$cor.table <- cor.table
       cor.table
       
     }, 
@@ -699,6 +702,7 @@ server <- function(input, output, session) {
     server = FALSE
     )
     
+    
     observeEvent(input$correlation_rows_selected, {
       
       tcga.cor <- reactiveValues()
@@ -708,7 +712,7 @@ server <- function(input, output, session) {
         mir <- input$mir.id
         project <- input$project.id.cor
         
-        cor.table <- getCorTable(project = project, mir = mir)
+        cor.table <- cor.list$cor.table #getCorTable(project = project, mir = mir)
         
         idx <- input$correlation_rows_selected
         mir.id <- cor.table[idx, 'miRNA.Accession']
@@ -774,7 +778,53 @@ server <- function(input, output, session) {
     })
     
     
+    output$cor_heatmap <- renderPlotly({
+      
+      mir <- input$mir.id
+      
+      idx <- input$correlation_rows_selected
+      
+      cor.table <- cor.list$cor.table
+      
+      mir.id <- cor.table[idx, 'miRNA.Accession']
+      mir.name <- cor.table[idx, 'miRNA.ID']
+      
+      target.id <- cor.table[idx, 'Target.Ensembl']
+      target.name <- cor.table[idx, 'Target.Symbol']
+      
+      cor.val <- c()
+      p.val <- c()
+      for (prj in projects.tcga) {
+        cor.mir.target <- getCorData(project = prj,mir=mir,target = target)
+        cor <- as.numeric(cor.mir.target$Correlation)
+        p <- as.numeric(cor.mir.target$P.Value)
+        
+        cor.val <- c(cor.val, cor)
+        p.val <- c(p.val, p)
+        
+      }
+      
+      anno <- as.character(symnum(p.val, #corr = FALSE, na = FALSE,
+                                  cutpoints = c(0, 0.001, 0.01, 0.05, 1),
+                                  symbols = c("***",'**','*','')))
+      
+      #names(cor.val) <- projects.tcga
+      
+      htmp.data <- data.frame(t(cor.val))
+      rownames(htmp.data) <- paste0(mir.name, '-', target.name)
+      colnames(htmp.data) <- projects.tcga
+      
+      anno.data <- data.frame(t(anno))
+      rownames(anno.data) <- paste0(mir.name, '-', target.name)
+      colnames(anno.data) <- projects.tcga
+      
+      p <- heatmaply(htmp.data, plot_method = 'plotly', Rowv = FALSE, Colv = FALSE, cellnote = anno.data, draw_cellnote = TRUE, cellnote_textposition = 'middle center', cellnote_size = 10, show_dendrogram = c(FALSE, FALSE))
+      #distfun = distSafe, colors=palette, column_text_angle = ifelse(ncol(fcWideTable) >= 25, 315, 45), , hide_colorbar = TRUE, 
+      p
+      
+    })
     
+
     output$enrichment <- DT::renderDataTable({
       
       mir <- input$mir.id
@@ -1700,6 +1750,8 @@ server <- function(input, output, session) {
     server = FALSE
     )
     
+    tcga.risk <- reactiveValues()
+    
     output$risk_plot_tcga <- renderPlot({
       
       dataForKMPlot <- risk.km.data.tcga[[project]]
@@ -1710,15 +1762,73 @@ server <- function(input, output, session) {
         p <- KMRiskPlotFun(dataForKMPlot)
       }
       
+      tcga.risk$risk.data <- dataForKMPlot
+      tcga.risk$risk.plot <- p
+      
       p
       
     })
     
+    output$risk.tcga.downbttn.csv <- downloadHandler(
+      filename = function(){paste('km.risk.csv', sep = '')},
+      
+      content = function(file){
+        write.csv(tcga.risk$risk.data, file, row.names = FALSE, quote = F)
+      })
+    
+    output$risk.tcga.downbttn.png <- downloadHandler(
+      filename = function(){paste('km.risk.png', sep = '')},
+      
+      content = function(file){
+        png(file, width = 600, height = 600)
+        print(tcga.risk$risk.plot)
+        dev.off()
+      })
+    
+    output$risk.tcga.downbttn.pdf <- downloadHandler(
+      filename = function(){paste('km.risk.pdf', sep = '')},
+      
+      content = function(file){
+        pdf(file, width = 6, height = 6)
+        print(tcga.risk$risk.plot)
+        dev.off()
+      })
+    
+    
     output$surv_roc_plot_tcga <- renderPlot({
       
-      surv.roc.plot.tcga[[project]]
+      p <- surv.roc.plot.tcga[[project]]
+      
+      tcga.risk$roc.plot <- p
+      
+      p
       
     })
+    
+    output$surv.roc.downbttn.csv <- downloadHandler(
+      filename = function(){paste('roc.risk.csv', sep = '')},
+
+      content = function(file){
+        write.csv(tcga.risk$risk.data, file, row.names = FALSE, quote = F)
+      })
+    
+    output$surv.roc.downbttn.png <- downloadHandler(
+      filename = function(){paste('roc.risk.png', sep = '')},
+      
+      content = function(file){
+        png(file, width = 600, height = 600)
+        print(tcga.risk$roc.plot)
+        dev.off()
+      })
+    
+    output$surv.roc.downbttn.pdf <- downloadHandler(
+      filename = function(){paste('roc.risk.pdf', sep = '')},
+      
+      content = function(file){
+        pdf(file, width = 6, height = 6)
+        print(tcga.risk$roc.plot)
+        dev.off()
+      })
     
     })
   
@@ -1947,6 +2057,8 @@ server <- function(input, output, session) {
     server = FALSE
     )
     
+    high.expr.ccma <- reactiveValues()
+    
     output$high.expr.barplot.ccma <- renderPlot({
       
       dataForBarPlot <- expr.high.ccma[[dataset]][1:50,]
@@ -1955,12 +2067,42 @@ server <- function(input, output, session) {
       p <- mirBarPlotCCMAFun(dataForBarPlot)
       
       #p <- ggplotly(p, tooltip=c("x", "y"))
+      high.expr.ccma$bar.data <- dataForBarPlot
+      high.expr.ccma$bar.plot <- p
+      
       p
       
     })
     
+    output$high.expr.ccma.downbttn.csv <- downloadHandler(
+      filename = function(){paste('barplot.csv', sep = '')},
+      
+      content = function(file){
+        write.csv(high.expr.ccma$bar.data, file, row.names = FALSE, quote = F)
+      })
+    
+    output$high.expr.ccma.downbttn.png <- downloadHandler(
+      filename = function(){paste('barplot.png', sep = '')},
+      
+      content = function(file){
+        png(file, width = 1200, height = 500)
+        print(high.expr.ccma$bar.plot)
+        dev.off()
+      })
+    
+    output$high.expr.ccma.downbttn.pdf <- downloadHandler(
+      filename = function(){paste('barplot.pdf', sep = '')},
+      
+      content = function(file){
+        pdf(file, width = 12, height = 5)
+        print(high.expr.ccma$bar.plot)
+        dev.off()
+      })
+    
     shinyjs::hide('table_sample_type')
     shinyjs::hide('volcano_sample_type')
+    shinyjs::hide('volcano.ccma.downbttn.csv')
+    shinyjs::hide('volcano.ccma.downbttn.pdf')
     
     observeEvent(input$deg.submit, {
       
@@ -2024,14 +2166,46 @@ server <- function(input, output, session) {
       
       shinyjs::show('table_sample_type')
       shinyjs::show('volcano_sample_type')
+      shinyjs::show('volcano.ccma.downbttn.csv')
+      shinyjs::show('volcano.ccma.downbttn.pdf')
+      
+      ccma.volcano <- reactiveValues()
       
       output$volcano_sample_type <- renderPlot({
         
         p <- volcanoPlotFun(dataForVolcanoPlot, logFcThreshold, adjPvalThreshold)
+        
+        ccma.volcano$volcano.data <- dataForVolcanoPlot
+        ccma.volcano$volcano.plot <- p
+        
         p
         
-        
       })
+      
+      output$volcano.ccma.downbttn.csv <- downloadHandler(
+        filename = function(){paste('volcano.csv', sep = '')},
+        
+        content = function(file){
+          write.csv(ccma.volcano$volcano.data, row.names = FALSE, quote = F)
+        })
+      
+      output$volcano.ccma.downbttn.png <- downloadHandler(
+        filename = function(){paste('volcano.png', sep = '')},
+        
+        content = function(file){
+          png(file, width = 600, height = 600)
+          print(ccma.volcano$volcano.plot)
+          dev.off()
+        })
+      
+      output$volcano.ccma.downbttn.pdf <- downloadHandler(
+        filename = function(){paste('volcano.pdf', sep = '')},
+        
+        content = function(file){
+          pdf(file, width = 6, height = 6)
+          print(ccma.volcano$volcano.plot)
+          dev.off()
+        })
       
       
       output$table_sample_type <- DT::renderDataTable({
