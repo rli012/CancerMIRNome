@@ -1,5 +1,7 @@
 
 ################################## UI #####################################
+.libPaths(c(.libPaths(), '/home/ubuntu/R/x86_64-pc-linux-gnu-library/3.6/'))
+
 library(shiny)
 library(shinydashboard)
 library(shinydashboardPlus)
@@ -241,7 +243,7 @@ tab_home <- dashboardPage(
       
       br(),
       h3(strong("About CancerMIRNome")),
-      tags$p('CancerMIRNome is a web server for cancer miRNome interactive analysis 
+      tags$p('CancerMIRNome is a web server for cancer miRNome interactive analysis and visualization 
              based on the huamn miRNome profiling data of 33 cancer types from 
              The Cancer Genome Atlas (TCGA), and 40 public cancer circulating miRNome 
              profiling datasets from GEO and ArrayExpress.', style = "font-size: 150%;"),
@@ -408,10 +410,12 @@ tab_query <- dashboardPage(
                   tabPanel(strong("miRNA-Target Correlation"),
                            column(12,
                                   br(),
+                                  #hr(),
+                                  
                                   project.id.cor,
                                   hr(),
                                   
-                                  h5('Spearman Correlation Analysis of the miRNA and its Targets (miRTarBase 2020)', align='center'),
+                                  h5('Pearson Correlation Analysis of the miRNA and its Targets (miRTarBase 2020)', align='center'),
                                   br(),
                                   column(12, DT::dataTableOutput("correlation"),
                                          hr()
@@ -427,6 +431,14 @@ tab_query <- dashboardPage(
                                          downloadButton(outputId='tcga.cor.downbttn.csv', label = "CSV"),
                                          #downloadButton(outputId='tcga.cor.downbttn.png', label = "PNG"),
                                          downloadButton(outputId='tcga.cor.downbttn.pdf', label = "PDF")
+                                  ),
+                                  column(12,
+                                         tags$hr(style="border-top: 1px dashed #A9A9A9"),
+                                         h5('miRNA-Target Correlation Across All TCGA Projects', align='center'),
+                                         h6("(Pearson Correlation, ***: P < 0.001; **: P < 0.01; *: P < 0.05; ns: P > 0.05)", align = 'center'),
+                                         #br(),
+                                         plotlyOutput('cor_heatmap', height='125px')#, #, width='100%', 
+                                         #tags$hr(style="border-top: 1px dashed #A9A9A9")
                                   )
                            )
                   ),
@@ -791,12 +803,24 @@ tab_tcga <- dashboardPage(
                                h5('Kaplan Meier Survival Analysis of the Prognostic Signature', align='center'),
                                h6("(Low- and high-risk groups were separated by median values)", align = 'center'),
                                
-                               plotOutput('risk_plot_tcga')
+                               plotOutput('risk_plot_tcga'),
+                               column(9),
+                               column(3,
+                                      downloadButton(outputId='risk.tcga.downbttn.csv', label = "CSV"),
+                                      #downloadButton(outputId='circ.expr.downbttn.png', label = "PNG"),
+                                      downloadButton(outputId='risk.tcga.downbttn.pdf', label = "PDF")
+                               )
                         ),
                         column(6,
                                h5('Time-dependent ROC Analysis of the Prognostic Signature', align='center'),
                                h6("(NNE method, span = 0.01)", align = 'center'),
-                               plotOutput('surv_roc_plot_tcga')
+                               plotOutput('surv_roc_plot_tcga'),
+                               column(9),
+                               column(3,
+                                      downloadButton(outputId='surv.roc.downbttn.csv', label = "CSV"),
+                                      #downloadButton(outputId='circ.expr.downbttn.png', label = "PNG"),
+                                      downloadButton(outputId='surv.roc.downbttn.pdf', label = "PDF")
+                               )
                         )
                  )
                  
@@ -882,7 +906,14 @@ tab_circulating <- dashboardPage(
                                   br(),
                                   tags$hr(style="border-top: 1px dashed #A9A9A9"),
                                   h5('Bar Plot of the Top 50 Highly Expressed miRNAs', align='center'),
-                                  plotOutput('high.expr.barplot.ccma')
+                                  plotOutput('high.expr.barplot.ccma'),
+                           
+                           column(10),
+                           column(2,
+                                  downloadButton(outputId='high.expr.ccma.downbttn.csv', label = "CSV"),
+                                  #downloadButton(outputId='circ.expr.downbttn.png', label = "PNG"),
+                                  downloadButton(outputId='high.expr.ccma.downbttn.pdf', label = "PDF")
+                                  )
                            )
                   ),
                   
@@ -924,15 +955,14 @@ tab_circulating <- dashboardPage(
                                   column(3),
                                   column(6,
                                          plotOutput('volcano_sample_type', height = 500)
-                                  )#,
-                                  # column(1),
-                                  # column(4,
-                                  #        sliderInput(inputId = "foldchange", label = h5(strong('Fold Change')),
-                                  #                    min = 0, max = 3,  step = 0.1, value = 2, width = 300),
-                                  #        
-                                  #        sliderInput(inputId = "fdr", label = h5(strong('BH Adjusted P Value')),
-                                  #                    min = 0, max = 0.1,  step = 0.01, value = 0.01, width = 300)
-                                  # )
+                                  ),
+                                  
+                                  column(7),
+                                  column(5,
+                                         downloadButton(outputId='volcano.ccma.downbttn.csv', label = "CSV"),
+                                         #downloadButton(outputId='circ.expr.downbttn.png', label = "PNG"),
+                                         downloadButton(outputId='volcano.ccma.downbttn.pdf', label = "PDF")
+                                  )
                            ),
                            
                            
@@ -1174,8 +1204,10 @@ ui <- fluidPage(
     # tags$style(type = 'text/css', '.navbar-nav {padding-left: 400px; font-size: 24px;}',
     #            '.navbar-default {margin-left: 2px;margin-right: 18px;margin-top: -2px;}'
   ),
-  dashboardFooter(left_text = NULL, right_text = h5(strong('Jia Lab @ University of California, Riverside')))
-  #HTML("<footer><p>Contact: <a href='mailto:rli012@ucr.ed'>Ruidong Li</a></p></footer>")
+  dashboardFooter(right_text = HTML('<footer><script type="text/javascript" src="//rf.revolvermaps.com/0/0/2.js?i=59d9778kul4&amp;m=0&amp;s=70&amp;c=ff0000&amp;t=1" async="async"></script></footer>'),
+                  #https://www.revolvermaps.com/
+                  left_text = HTML("<footer><h6>Contact: <a href='https://rli012.github.io/' target='_blank'>Ruidong Li</a><br>Email: rli012@ucr.edu; WeChat: rli012</h6><strong><h5><a href='http://jialab.ucr.acsitefactory.com/' target='_blank'>Jia Lab @ University of California, Riverside</a></h5></strong></footer>"))
+                  #left_text = HTML("<footer><h6>\t\tCopyright &#169 2020 <a href='http://jialab.ucr.acsitefactory.com/' target='_blank'>Jia Lab</a>. <br><a href='https://plantbiology.ucr.edu/' target='_blank'>Department of Botany & Plant Sciences</a>, <br><a href='https://plantbiology.ucr.edu/' target='_blank'>University of California, Riverside</a></h6></footer>"))
 )
 
 shinyUI(ui)

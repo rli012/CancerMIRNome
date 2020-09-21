@@ -1,5 +1,7 @@
 ################################## Server #####################################
 
+.libPaths(c(.libPaths(), '/home/ubuntu/R/x86_64-pc-linux-gnu-library/3.6/'))
+
 library(shiny)
 library(shinydashboard)
 library(shinydashboardPlus)
@@ -679,6 +681,8 @@ server <- function(input, output, session) {
       
     })
     
+    observeEvent(input$project.id.cor, {
+
     cor.list <- reactiveValues()
     
     output$correlation <- DT::renderDataTable({
@@ -705,21 +709,21 @@ server <- function(input, output, session) {
     
     observeEvent(input$correlation_rows_selected, {
       
+      mir <- input$mir.id
+      project <- input$project.id.cor
+      
+      cor.table <- cor.list$cor.table #getCorTable(project = project, mir = mir)
+      
+      idx <- input$correlation_rows_selected
+      mir.id <- cor.table[idx, 'miRNA.Accession']
+      mir.name <- cor.table[idx, 'miRNA.ID']
+      
+      target.id <- cor.table[idx, 'Target.Ensembl']
+      target.name <- cor.table[idx, 'Target.Symbol']
+      
       tcga.cor <- reactiveValues()
       
       output$cor_plot <- renderPlot({
-        
-        mir <- input$mir.id
-        project <- input$project.id.cor
-        
-        cor.table <- cor.list$cor.table #getCorTable(project = project, mir = mir)
-        
-        idx <- input$correlation_rows_selected
-        mir.id <- cor.table[idx, 'miRNA.Accession']
-        mir.name <- cor.table[idx, 'miRNA.ID']
-        
-        target.id <- cor.table[idx, 'Target.Ensembl']
-        target.name <- cor.table[idx, 'Target.Symbol']
         
         rna.tcga <- getRNATable(project)
         colnames(rna.tcga) <- gsub('.', '-', colnames(rna.tcga), fixed = T)
@@ -745,7 +749,7 @@ server <- function(input, output, session) {
         tcga.cor$cor.plot <- p
         
         p
-        
+
       })
       
       
@@ -775,53 +779,78 @@ server <- function(input, output, session) {
         })
       
       
+      
+      
+      output$cor_heatmap <- renderPlotly({
+
+        req(tcga.cor$cor.plot)
+        
+        cor.val <- c()
+        p.val <- c()
+
+        for (prj in projects.tcga) {
+          cor.mir.target <- getCorData(project = prj,mir=mir,target = target.id)
+          cor <- as.numeric(cor.mir.target$Correlation)
+          p <- as.numeric(cor.mir.target$P.Value)
+
+          cor.val <- c(cor.val, cor)
+          p.val <- c(p.val, p)
+
+        }
+
+        o <- order(cor.val, decreasing = F)
+        cor.val <- cor.val[o]
+        p.val <- p.val[o]
+        projects <- projects.tcga[o]
+
+        anno <- as.character(symnum(p.val, #corr = FALSE, na = FALSE,
+                                    cutpoints = c(0, 0.001, 0.01, 0.05, 1),
+                                    symbols = c("***",'**','*','')))
+
+        htmp.data <- data.frame(t(cor.val))
+        rownames(htmp.data) <- paste0(mir.name, ':', target.name)
+        colnames(htmp.data) <- projects
+
+        anno.data <- data.frame(t(anno))
+        rownames(anno.data) <- paste0(mir.name, ':', target.name)
+        colnames(anno.data) <- projects
+
+        hover.text <- data.frame(t(paste0('Project: ', projects,'\nCorrelation: ',cor.val,'\nP Value: ', p.val)))
+        rownames(hover.text) <- paste0(mir.name, ':', target.name)
+        colnames(hover.text) <- projects
+
+        max.cor <- max(abs(htmp.data))
+
+        colors <- c(google.blue, 'white', google.red)
+
+        p <- heatmaply(htmp.data,
+                       plot_method = 'plotly',
+                       # scale_fill_gradient_fun = ggplot2::scale_fill_gradient2(
+                       #   low = "blue",
+                       #   high = "red",
+                       #   midpoint = 0,
+                       #   limits = c(-1, 1)
+                       # ),
+                       Rowv = FALSE,
+                       Colv = FALSE,
+                       fontsize_row = 14,
+                       fontsize_col = 12,
+                       colors <- c(google.blue, 'white', google.red),
+                       column_text_angle = 315,
+                       hide_colorbar = TRUE,
+                       custom_hovertext = hover.text,
+                       limits = c(-max.cor,max.cor),
+                       cellnote = anno.data,
+                       draw_cellnote = TRUE,
+                       cellnote_textposition = 'middle center',
+                       cellnote_size = 8,
+                       show_dendrogram = c(FALSE, FALSE))
+        p
+
+      })
+      
+      
     })
-    
-    
-    output$cor_heatmap <- renderPlotly({
-      
-      mir <- input$mir.id
-      
-      idx <- input$correlation_rows_selected
-      
-      cor.table <- cor.list$cor.table
-      
-      mir.id <- cor.table[idx, 'miRNA.Accession']
-      mir.name <- cor.table[idx, 'miRNA.ID']
-      
-      target.id <- cor.table[idx, 'Target.Ensembl']
-      target.name <- cor.table[idx, 'Target.Symbol']
-      
-      cor.val <- c()
-      p.val <- c()
-      for (prj in projects.tcga) {
-        cor.mir.target <- getCorData(project = prj,mir=mir,target = target)
-        cor <- as.numeric(cor.mir.target$Correlation)
-        p <- as.numeric(cor.mir.target$P.Value)
-        
-        cor.val <- c(cor.val, cor)
-        p.val <- c(p.val, p)
-        
-      }
-      
-      anno <- as.character(symnum(p.val, #corr = FALSE, na = FALSE,
-                                  cutpoints = c(0, 0.001, 0.01, 0.05, 1),
-                                  symbols = c("***",'**','*','')))
-      
-      #names(cor.val) <- projects.tcga
-      
-      htmp.data <- data.frame(t(cor.val))
-      rownames(htmp.data) <- paste0(mir.name, '-', target.name)
-      colnames(htmp.data) <- projects.tcga
-      
-      anno.data <- data.frame(t(anno))
-      rownames(anno.data) <- paste0(mir.name, '-', target.name)
-      colnames(anno.data) <- projects.tcga
-      
-      p <- heatmaply(htmp.data, plot_method = 'plotly', Rowv = FALSE, Colv = FALSE, cellnote = anno.data, draw_cellnote = TRUE, cellnote_textposition = 'middle center', cellnote_size = 10, show_dendrogram = c(FALSE, FALSE))
-      #distfun = distSafe, colors=palette, column_text_angle = ifelse(ncol(fcWideTable) >= 25, 315, 45), , hide_colorbar = TRUE, 
-      p
-      
     })
     
 
