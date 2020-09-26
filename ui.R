@@ -435,7 +435,7 @@ tab_query <- dashboardPage(
                                   column(12,
                                          tags$hr(style="border-top: 1px dashed #A9A9A9"),
                                          h5('miRNA-Target Correlation Across All TCGA Projects', align='center'),
-                                         h6("(Pearson Correlation, ***: P < 0.001; **: P < 0.01; *: P < 0.05; ns: P > 0.05)", align = 'center'),
+                                         h6("(Pearson Correlation, ***: P < 0.001; **: P < 0.01; *: P < 0.05)", align = 'center'),
                                          #br(),
                                          plotlyOutput('cor_heatmap', height='125px')#, #, width='100%', 
                                          #tags$hr(style="border-top: 1px dashed #A9A9A9")
@@ -1184,6 +1184,7 @@ ui <- fluidPage(
   #includeCSS("www/css/footer.css"),
   useShinyjs(),
   #extendShinyjs(text = jscode, functions = "refresh"),
+  tags$head(tags$meta(name = "viewport", content = "width=1260")),
   
   navbarPage(
     title = NULL,
@@ -1204,7 +1205,7 @@ ui <- fluidPage(
     # tags$style(type = 'text/css', '.navbar-nav {padding-left: 400px; font-size: 24px;}',
     #            '.navbar-default {margin-left: 2px;margin-right: 18px;margin-top: -2px;}'
   ),
-  dashboardFooter(right_text = HTML('<footer><script type="text/javascript" src="//rf.revolvermaps.com/0/0/2.js?i=59d9778kul4&amp;m=0&amp;s=70&amp;c=ff0000&amp;t=1" async="async"></script></footer>'),
+  dashboardFooter(right_text = HTML('<footer><h10>visits since Sept 20, 2020</h10><script type="text/javascript" src="//rf.revolvermaps.com/0/0/2.js?i=59d9778kul4&amp;m=0&amp;s=70&amp;c=ff0000&amp;t=1" async="async"></script></footer>'),
                   #https://www.revolvermaps.com/
                   left_text = HTML("<footer><h6>Contact: <a href='https://rli012.github.io/' target='_blank'>Ruidong Li</a><br>Email: rli012@ucr.edu; WeChat: rli012</h6><strong><h5><a href='http://jialab.ucr.acsitefactory.com/' target='_blank'>Jia Lab @ University of California, Riverside</a></h5></strong></footer>"))
                   #left_text = HTML("<footer><h6>\t\tCopyright &#169 2020 <a href='http://jialab.ucr.acsitefactory.com/' target='_blank'>Jia Lab</a>. <br><a href='https://plantbiology.ucr.edu/' target='_blank'>Department of Botany & Plant Sciences</a>, <br><a href='https://plantbiology.ucr.edu/' target='_blank'>University of California, Riverside</a></h6></footer>"))
