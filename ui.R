@@ -214,7 +214,7 @@ tab_home <- dashboardPage(
       column(12,
              h3(strong('Cancer Circulating miRNome')),
              
-             valueBox(value = tags$p(strong("31"), style = "font-size: 90%;"), color = 'teal', width = 3,
+             valueBox(value = tags$p(strong("32"), style = "font-size: 90%;"), color = 'teal', width = 3,
                       subtitle = tags$p(strong("Cancer types"), style = "font-size: 160%;"),  icon = icon("dna")),
              valueBox(value = tags$p(strong("40"), style = "font-size: 90%;"), color = 'teal', width = 3,
                       subtitle = tags$p(strong("Studies"), style = "font-size: 160%;"), icon = icon("database")),
@@ -231,24 +231,54 @@ tab_home <- dashboardPage(
       width = 12, # solidHeader=TRUE can remove the top boarder
       
       h2(strong("Introduction")),
-      h3(strong("What is circulating miRNA?")),
-      tags$p("miRNAs can function as potential oncogenes or tumor suppressors. 
-             Altered expression of these molecules was correlated with the 
-             occurrence of many cancer diseases and therefore they 
-             are considered a molecular tool for non-invasive cancer diagnosis and prognosis", 
+      h3(strong("miRNAs in cancer")),
+      tags$p("MicroRNAs (miRNAs) are a class of small endogenous non-coding RNAs of 
+             ~22nt in length that negatively regulate the expression of their target 
+             protein-coding genes. miRNAs play critical roles in many biological processes, 
+             such as cell proliferation, differentiation, and apoptosis. miRNAs may 
+             function as oncogenes or tumor suppressors. Mounting evidences have 
+             demonstrated that the expression of miRNAs is dysregulated in various 
+             types of human cancers, which makes them potential biomarkers for cancer 
+             diagnosis and prognosis.", 
              style = "font-size: 150%;"),
       
-      tags$img(src='img/mirna.jpg', width=550), # in www
-      tags$img(src='img/fluid.jpg', width=550),
+      #br(),
+      tags$hr(style="border-top: 1px dashed #A9A9A9"),
       
-      br(),
+      h3(strong("Circulating miRNAs as promising diagnostic biomarkers")),
+      
+      tags$p("miRNAs can be released into extracellular body fluids, including blood. 
+             Circulating miRNAs are incorporated in extracellular vesicles (EVs) such as 
+             shed microvesicles (sMVs) and exosomes, apoptotic bodies, or form complexes 
+             with RNA binding proteins such as Argonates (AGOs). The protected circulating 
+             miRNAs are remarkably stable in the extracellular environment, thus have 
+             tremendous potential as non-invasive diagnostic biomarkers for early cancer 
+             detection.", 
+             style = "font-size: 150%;"),
+      
+      #tags$img(src='img/mirna.jpg', width=550), # in www
+      #tags$img(src='img/fluid.jpg', width=550),
+      
+      #br(),
+      tags$hr(style="border-top: 1px dashed #A9A9A9"),
+      
       h3(strong("About CancerMIRNome")),
       tags$p('CancerMIRNome is a web server for cancer miRNome interactive analysis and visualization 
-             based on the huamn miRNome profiling data of 33 cancer types from 
+             based on the huamn miRNome data of 33 cancer types from 
              The Cancer Genome Atlas (TCGA), and 40 public cancer circulating miRNome 
-             profiling datasets from GEO and ArrayExpress.', style = "font-size: 150%;"),
+             profiling datasets from NCBI Gene Expression Omnibus (GEO) and ArrayExpress.', style = "font-size: 150%;"),
+      tags$p('CancerMIRNome provides a user-friendly interface for miRNA analysis both at 
+             a single miRNA level to explore the expression and function of a miRNA in 
+             many different cancers and at a dataset level to identify diagnostic and 
+             prognostic biomarkers for a specific cancer type.', style = "font-size: 150%;"),
+      
+      #tags$img(src='img/query.jpg', width=550), # in www
+      #tags$img(src='img/mirnome.jpg', width=550),
+      tags$img(src='img/both.jpg', width=1100),
       
       br(),
+      tags$hr(style="border-top: 1px dashed #A9A9A9"),
+      
       h3(strong("Cite")),
       tags$p('Please cite the following publication:
              Li, R., et al., CancerMIRNome: a web server for cancer miRNome interactive analysis and visualization', style = "font-size: 150%;")
