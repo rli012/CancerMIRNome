@@ -2,14 +2,14 @@
 ### a web server for cancer miRNome interactive analysis and visualization
 ---
 
+#### Please cite the following publication: Li, R., et al., CancerMIRNome: a web server for cancer miRNome interactive analysis and visualization
+
 #### URL: http://bioinfo.jialab-ucr.org/CancerMIRNome/
 
 #### IP Address: http://3.236.105.88:3838/CancerMIRNome/
 
 #### Live Statistics: https://www.revolvermaps.com/livestats/map/59d9778kul4/
 ---
-
-##### Please cite the following publication: Li, R., et al., CancerMIRNome: a web server for cancer miRNome interactive analysis and visualization
 
 ### Introduction
 #### miRNAs in cancer
