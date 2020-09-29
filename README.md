@@ -1,5 +1,5 @@
 ## CancerMIRNome
-### a web server for cancer miRNome interactive analysis
+### a web server for cancer miRNome interactive analysis and visualization
 ---
 
 #### URL: http://bioinfo.jialab-ucr.org/CancerMIRNome/
