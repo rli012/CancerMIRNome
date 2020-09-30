@@ -9,7 +9,8 @@
 #### IP Address: http://3.236.105.88:3838/CancerMIRNome/
 
 #### Live Statistics: https://www.revolvermaps.com/livestats/map/59d9778kul4/
----
+
+<div align="center"><h4>'Workflow'</h4></div>
 
 ![](https://github.com/rli012/CancerMIRNome/blob/master/www/img/workflow.jpg)
 
