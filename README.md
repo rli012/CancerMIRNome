@@ -10,10 +10,8 @@
 
 #### Live Statistics: https://www.revolvermaps.com/livestats/map/59d9778kul4/
 
-
-![](https://github.com/rli012/CancerMIRNome/blob/master/www/img/workflow.jpg)
-
 ![](https://github.com/rli012/CancerMIRNome/blob/master/www/img/workflow_sm.jpg)
+
 ---
 
 ### Introduction
