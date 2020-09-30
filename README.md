@@ -23,7 +23,8 @@ CancerMIRNome is a web server for cancer miRNome interactive analysis and visual
 
 CancerMIRNome provides a user-friendly interface for miRNA analysis both at a single miRNA level to explore the expression and function of a miRNA in many different cancers and at a dataset level to identify diagnostic and prognostic biomarkers for a specific cancer type.
 
-![](https://github.com/rli012/CancerMIRNome/blob/master/www/img/CancerMIRNome_page.jpg)
+![](https://github.com/rli012/CancerMIRNome/blob/master/www/img/workflow.jpg)
 
+![](https://github.com/rli012/CancerMIRNome/blob/master/www/img/CancerMIRNome_page.jpg)
 
 ![](https://github.com/rli012/CancerMIRNome/blob/master/www/img/both.jpg)
