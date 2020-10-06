@@ -3,7 +3,7 @@
 ---
 
 #### Citation
-Please cite: [Li, R., et al., CancerMIRNome: a web server for interactive analysis and visualization of cancer miRNome data. bioRxiv (2020). https://doi.org/10.1101/2020.10.04.325670](https://doi.org/10.1101/2020.10.04.325670)
+Please cite: [Li, R., et al., CancerMIRNome: a web server for interactive analysis and visualization of cancer miRNome data. bioRxiv (2020)](https://www.biorxiv.org/content/10.1101/2020.10.04.325670v1)
 
 #### URL: http://bioinfo.jialab-ucr.org/CancerMIRNome/
 
