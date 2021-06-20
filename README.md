@@ -9,7 +9,7 @@ Please cite: [Li, R., et al., CancerMIRNome: a web server for interactive analys
 
 #### Live Statistics: https://www.revolvermaps.com/livestats/map/59d9778kul4/
 
-![](https://github.com/rli012/CancerMIRNome/blob/master/www/img/workflow_sm.jpg)
+![](https://github.com/rli012/OncomiRNomeDB/blob/master/www/img/workflow_sm.jpg)
 
 ---
 
@@ -24,7 +24,5 @@ miRNAs can be released into extracellular body fluids, including blood. Circulat
 OncomiRNomeDB is a comprehensive database of miRNomes in cancer with the huamn miRNome data of 33 cancer types from The Cancer Genome Atlas (TCGA), and 40 public cancer circulating miRNome profiling datasets from NCBI Gene Expression Omnibus (GEO) and ArrayExpress.
 
 OncomiRNomeDB provides a user-friendly interface and a suite of advanced functions for miRNA analysis both at a single miRNA level to explore the expression and function of a miRNA in many different cancers and at a dataset level to identify diagnostic and prognostic biomarkers for a specific cancer type.
-
-![](https://github.com/rli012/CancerMIRNome/blob/master/www/img/CancerMIRNome_page.jpg)
 
 ![](https://github.com/rli012/CancerMIRNome/blob/master/www/img/both.jpg)
