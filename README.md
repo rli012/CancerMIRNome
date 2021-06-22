@@ -1,9 +1,9 @@
 ## CancerMIRNome
-### a comprehensive & interactive database for miRNomes in cancer
+### an interactive analysis and visualization database for miRNome profiles of human cancer
 ---
 
 #### Citation
-Please cite: [Li, R., et al., CancerMIRNome: a comprehensive and interactive database for miRNomes in cancer. bioRxiv (2020)](https://www.biorxiv.org/content/10.1101/2020.10.04.325670v1)
+Please cite: [Li, R., et al., CancerMIRNome: an interactive analysis and visualization database for miRNome profiles of human cancer. bioRxiv (2020)](https://www.biorxiv.org/content/10.1101/2020.10.04.325670v3)
 
 #### URL: http://bioinfo.jialab-ucr.org/CancerMIRNome/
 
