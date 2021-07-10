@@ -1,7 +1,8 @@
-#.libPaths(c(.libPaths(), '/home/ubuntu/R/x86_64-pc-linux-gnu-library/3.6/'))
+
+.libPaths(c(.libPaths(), '/home/ubuntu/R/x86_64-pc-linux-gnu-library/3.6/'))
 
 library(RColorBrewer)
-library(plotROC)
+library(plotROC) # sudo apt install libxml2-dev
 library(RSQLite)
 
 google.red <- '#ea4235'
@@ -325,6 +326,75 @@ tcgaROCForestplotFun <- function(dataForForestPlot) {
   
 }
 
+tcgaROCForestplotFunT <- function(dataForForestPlot) {
+  p <- ggplot(dataForForestPlot, aes(x=seq_along(Project), y=AUC)) +
+    
+    geom_rect(aes(xmin = seq_along(Project) - .5, xmax = seq_along(Project) + .5,
+                  ymin = -0.8, ymax = 1.01,
+                  fill = ordered(seq_along(Project) %% 2 + 1))) +
+    scale_fill_manual(values = c("#00000033", "#FFFFFF33"), guide = "none") +
+    #xlim(c(0.5, length(dataForForestPlot$Project)+1.5)) +
+    scale_y_continuous(breaks = seq(0,1,0.5), labels = seq(0,1,0.5)) +
+    scale_x_continuous(limits = c(0, length(dataForForestPlot$Project)+2), expand = c(0,0)) +
+    #geom_segment(aes(y=dataset, x=lower95.coxph, xend=upper95.coxph, yend=dataset), color='black', size=1) +
+    #geom_segment(aes(y=6:1-0.1, x=lower95.coxph, xend=lower95.coxph, yend=6:!+0.1), color='black', size=1) +
+    geom_errorbar(aes(ymin=Lower95, ymax=Upper95),width=0.4, size=0.8, color='black')+ 
+    geom_point(color=google.red, size=3, shape=18) + #shape=15, facet_grid(.~type) +
+    geom_text(data =dataForForestPlot, aes(x=seq_along(Project), y=-0.7, label=Project, group=NULL),
+              size=5) +#, fontface='bold'
+    geom_text(data =dataForForestPlot, aes(x=seq_along(Project), y=-0.5, label=N.Tumor, group=NULL),
+              size=5) +#, fontface='bold'
+    geom_text(data =dataForForestPlot, aes(x=seq_along(Project), y=-0.35, label=N.Normal, group=NULL),
+              size=5) +#, fontface='bold'
+    geom_text(data =dataForForestPlot, aes(x=seq_along(Project), y=-0.15, label=AUC, group=NULL, vjust=-0.1),
+              size=4.5) +
+    geom_text(data =dataForForestPlot, aes(x=seq_along(Project), y=-0.15, label=paste0('(', Lower95, '-', Upper95, ')'), group=NULL, vjust=1.1),
+              size=4.5) +
+    
+    #geom_text(data =dataForForestPlot, aes(x=dataset, y=c(-6.7,-7.3,-2.6,2.6,6.1,5.9), label=P, group=NULL),
+    #          size=4.4) +
+    geom_hline(yintercept = 0.5, linetype=2, color='black') +
+    geom_hline(yintercept = 0, linetype=1, color='grey') +
+    #geom_text(data =dataForForestPlot, aes(x=dataset, y=c(0.35,0.5,0.2,0.45,0.95,0.55), label=p.coxph, group=NULL),
+    #          size=4.4) +
+    #scale_y_continuous(trans = 'log10',
+    #                   breaks = c(0, 1, 2.5,50,250,7500),
+    #                   labels = c(0, 1, 2.5,50,250,7500)) +
+    coord_flip()+
+    #ylim(0,0.05) +
+    xlab('')+ylab('AUC') +
+    #ggtitle(paste0('ROC Analysis of ', mir.name, ' in TCGA')) +
+    #xlim(0,100) +
+    theme_bw()+
+    #theme_set(theme_minimal()) #
+    theme(legend.title = element_blank(),
+          legend.text = element_text(size=14),
+          legend.position = 'right') +
+    #theme(plot.title = element_text(color='black', size=18, face = 'bold', hjust = 0.5)) +
+    theme(axis.title.x=element_text(size=16, face = 'bold', hjust = 0.71),
+          axis.title.y=element_blank(),
+          axis.ticks=element_blank(),
+          axis.text = element_text(color='black', size=14, face = 'bold'),
+          axis.text.y = element_blank(),
+          #axis.text.x = element_text(angle = 0, hjust=0.5),
+          strip.text = element_text(size=14)) +
+    theme(#axis.line = element_line(colour = "black"),
+      axis.line.y = element_blank(),
+      panel.grid.minor.y = element_blank(),
+      panel.grid.minor.x = element_blank(),
+      panel.grid.major.y = element_blank(),
+      panel.border = element_blank(),
+      panel.background = element_blank()) +
+    annotate(geom = 'text', x = length(dataForForestPlot$Project)+1.5, y=c(-0.7,-0.5,-0.35,-0.15),
+             label=c('Project','Tumor','Normal','AUC\n(95% CI)'), size=5, fontface='bold')
+  return (p)
+}
+
+
+
+
+
+
 
 rocplotFun <- function(dataForROCPlot) {
   
@@ -425,8 +495,8 @@ volcanoPlotFun <- function(dataForVolcanoPlot, logFcThreshold, adjPvalThreshold)
 
   p <- ggplot(dataForVolcanoPlot, aes(x = logFC, y = -log10(adj.P.Val))) +
     #xlim(-2,2) +
-    labs(x=expression(bold('log'['2']*'(Fold Change)')), 
-         y=(expression(bold('-log'['10']*'(FDR)'))), 
+    labs(x=expression(bold('Log'['2']*'(Fold Change)')), 
+         y=expression(bold('-Log'['10']*'(FDR)')), 
          title=NULL) +
     geom_point(aes(color=Significance), alpha=1, size=2) +
     geom_vline(xintercept = c(-logFcThreshold, logFcThreshold),
@@ -597,7 +667,7 @@ barplotFun <- function(dataForBarPlot) {
 mirBarPlotFun <- function(dataForBarPlot) {
   
   p <- ggplot(data=dataForBarPlot, aes(x=miRNA.ID, y=Median, fill='dodgerblue')) +
-  geom_bar(stat='identity', width=.6) + #coord_flip()
+  geom_bar(stat='identity', width=0.7) + #coord_flip()
   # geom_errorbar(aes(ymin=expr-sd,
   #                   ymax=expr+sd),
   #               width=.5, size=0.5,
@@ -632,7 +702,7 @@ mirBarPlotFun <- function(dataForBarPlot) {
 mirBarPlotCCMAFun <- function(dataForBarPlot) {
   
   p <- ggplot(data=dataForBarPlot, aes(x=miRNA.ID, y=Median, fill='dodgerblue')) +
-    geom_bar(stat='identity', width=.6) + #coord_flip()
+    geom_bar(stat='identity', width=.7) + #coord_flip()
     # geom_errorbar(aes(ymin=expr-sd,
     #                   ymax=expr+sd),
     #               width=.5, size=0.5,
@@ -767,9 +837,6 @@ kmTest <- function(exprDa, daysToDeath, vitalStatus, sep='median') {
 
 
 
-
-
-
 tcgaKMForestplotFun <- function(dataForForestPlot) {
   
   mir.name <- dataForForestPlot$mir[1]
@@ -812,6 +879,115 @@ tcgaKMForestplotFun <- function(dataForForestPlot) {
   return (p)
   
 }
+
+tcgaKMForestplotFunT <- function(dataForForestPlot) {
+  
+  dataForForestPlot$HR <- round(dataForForestPlot$HR,2)
+  dataForForestPlot$Lower95 <- round(dataForForestPlot$Lower95,2)
+  dataForForestPlot$Upper95 <- round(dataForForestPlot$Upper95,2)
+  
+  dataForForestPlot$P.Value <- ifelse(dataForForestPlot$P.Value >= 0.01, formatC(dataForForestPlot$P.Value, digits = 2),
+                                      formatC(dataForForestPlot$P.Value, format = "e", digits = 2))
+  
+  # rangeb <- range(dataForForestPlot$Lower95, dataForForestPlot$Upper95, na.rm = TRUE)
+  # 
+  # rangeplot <- rangeb
+  # rangeplot[1] <- rangeplot[1] - diff(rangeb)
+  # #rangeplot[2] <- rangeplot[2] #+ .15 * diff(rangeb)
+  
+  rangeb <- c(0,max(dataForForestPlot$Upper95))
+  
+  rangeplot <- rangeb
+  rangeplot[1] <- rangeb[2]*-1*0.8
+  rangeplot[2] <- rangeplot[2] + 0.01 * diff(rangeb)
+  
+  
+  
+  cpositions=c(0.05, 0.15, 0.25, 0.35)
+  
+  width <- diff(rangeplot)
+  # y-coordinates for labels:
+  y_variable <- rangeplot[1] +  cpositions[1] * width
+  y_patients <- rangeplot[1] +  cpositions[2] * width
+  y_nlevel <- rangeplot[1]  +  cpositions[3] * width
+  y_cistring <- rangeplot[1]  +  cpositions[4] * width
+  y_stars <- rangeb[2]
+  
+  p <- ggplot(dataForForestPlot, aes(x=seq_along(Project), y=HR)) +
+    
+    geom_rect(aes(xmin = seq_along(Project) - 0.5, xmax = seq_along(Project) + 0.5,
+                  ymin = rangeplot[1], ymax = rangeplot[2],
+                  fill = ordered(seq_along(Project) %% 2 + 1))) +
+    scale_fill_manual(values = c("#00000033", "#FFFFFF33"), guide = "none") +
+    #xlim(c(0.5, length(dataForForestPlot$Project)+1.5)) +
+    scale_y_continuous(breaks = sort(unique(c(seq(0, rangeplot[2], 4), 1))), labels = sort(unique(c(seq(0, rangeplot[2], 4), 1)))) +
+    scale_x_continuous(limits = c(0, length(dataForForestPlot$Project)+2.2), expand = c(0,0)) +
+    #geom_segment(aes(y=dataset, x=lower95.coxph, xend=upper95.coxph, yend=dataset), color='black', size=1) +
+    #geom_segment(aes(y=6:1-0.1, x=lower95.coxph, xend=lower95.coxph, yend=6:!+0.1), color='black', size=1) +
+    geom_errorbar(aes(ymin=Lower95, ymax=Upper95),width=0.4, size=0.8, color='black')+ 
+    geom_point(color=google.red, size=3, shape=15) + #shape=15, facet_grid(.~type) +
+    geom_text(data =dataForForestPlot, aes(x=seq_along(Project), y=y_variable, label=Project, group=NULL),
+              size=5) +#, fontface='bold', hjust=0
+    # geom_text(data =dataForForestPlot, aes(x=seq_along(Project), y=y_nlevel, label=paste0(HR, ' (', Lower95, '-', Upper95, ')'), group=NULL),
+    #           size=4) +
+    geom_text(data =dataForForestPlot, aes(x=seq_along(Project), y=y_patients, label=Patients, group=NULL),
+              size=5) +#, fontface='bold', hjust=0
+    geom_text(data =dataForForestPlot, aes(x=seq_along(Project), y=y_nlevel, label=HR, group=NULL),
+              size=4.5, vjust=-0.1) +
+    geom_text(data =dataForForestPlot, aes(x=seq_along(Project), y=y_nlevel, label=paste0('(', Lower95, '-', Upper95, ')'), group=NULL),
+              size=4.5, vjust=1.1) +
+    geom_text(data =dataForForestPlot, aes(x=seq_along(Project), y=y_cistring, label=P.Value, group=NULL),
+              size=5) +
+    
+    #geom_text(data =dataForForestPlot, aes(x=dataset, y=c(-6.7,-7.3,-2.6,2.6,6.1,5.9), label=P, group=NULL),
+    #          size=4.4) +
+    geom_hline(yintercept = 1, linetype=2, color='black') +
+    geom_hline(yintercept = 0, linetype=1, color='grey') +
+    #geom_text(data =dataForForestPlot, aes(x=dataset, y=c(0.35,0.5,0.2,0.45,0.95,0.55), label=p.coxph, group=NULL),
+    #          size=4.4) +
+    #scale_y_continuous(trans = 'log10',
+    #                   breaks = c(0, 1, 2.5,50,250,7500),
+    #                   labels = c(0, 1, 2.5,50,250,7500)) +
+    coord_flip()+
+    #ylim(0,0.05) +
+    xlab('')+ylab('Hazard Ratio') +
+    #ggtitle(paste0('ROC Analysis of ', mir.name, ' in TCGA')) +
+    #xlim(0,100) +
+    theme_bw()+
+    #theme_set(theme_minimal()) #
+    theme(legend.title = element_blank(),
+          legend.text = element_text(size=14),
+          legend.position = 'right') +
+    #theme(plot.title = element_text(color='black', size=18, face = 'bold', hjust = 0.5)) +
+    theme(axis.title.x=element_text(size=16, face = 'bold', hjust = 0.71),
+          axis.title.y=element_blank(),
+          #axis.text.y=element_blank(),
+          axis.ticks=element_blank(),
+          axis.text = element_text(color='black', size=14, face = 'bold'),
+          axis.text.y = element_blank(),
+          #axis.text.x = element_text(angle = 0, hjust=0.5),
+          strip.text = element_text(size=14)) +
+    theme(#axis.line = element_line(colour = "black"),
+      axis.line.y = element_blank(),
+      panel.grid.minor.y = element_blank(),
+      panel.grid.minor.x = element_blank(),
+      panel.grid.major.y = element_blank(),
+      panel.border = element_blank(),
+      panel.background = element_blank()) +
+    annotate(geom = 'text', x = length(dataForForestPlot$Project)+1.5, y=c(y_variable, y_patients, y_nlevel, y_cistring),
+             label=c('Project','N','Hazard Ratio\n(95% CI)','P Value'), size=5, fontface='bold')
+  
+  p
+  
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -1162,7 +1338,9 @@ CircViolinPlotFun <- function(dataForViolinPlot) {
           legend.spacing.x = unit(0.1, "cm"),
           axis.title = element_text(size=16),
           strip.text = element_text(size=16, face='bold'),
-          panel.border = element_rect(colour = "black"))
+          panel.border = element_rect(colour = "black"),
+          strip.background = element_rect(fill = 'gray88')) +
+    theme(plot.margin =  margin(t = 0.25, r = 0.25, b = 0.25, l = 1, unit = "cm"))
   
   #p <- p + geom_jitter(size=0.1, width=0.2)
   
@@ -1196,7 +1374,7 @@ plot_overlay_server <- function(input,
 
 #############################
 
-getCorTable <- function(project, mir, sql='data/Correlation.miRTarBase.sqlite') {
+getCorTable <- function(project, mir, sql='data/Pearson.Correlation.miRTarBase.sqlite') {
   
   db <- dbConnect(SQLite(), dbname=sql)
   
@@ -1212,6 +1390,24 @@ getCorTable <- function(project, mir, sql='data/Correlation.miRTarBase.sqlite') 
   
 }
 
+
+getCorData <- function(project, mir, target, sql='data/Pearson.Correlation.miRTarBase.sqlite') {
+  
+  db <- dbConnect(SQLite(), dbname=sql)
+  
+  CMD <- paste0("SELECT * FROM [", project, "] WHERE [miRNA.Accession] == '", mir, "'", " AND [Target.Ensembl] == '", target, "'")
+  
+  query <- dbSendQuery(db, CMD)
+  cor.table <- dbFetch(query)
+  
+  dbClearResult(query)
+  dbDisconnect(db)
+  
+  return (cor.table)
+  
+}
+
+
 getRNATable <- function(project) {
   
   if (project=='TCGA-BRCA') {
@@ -1226,3 +1422,24 @@ getRNATable <- function(project) {
   return (expr.table)
   
 }
+
+
+getCCMATable <- function(project) {
+  
+  large.projects <- c('GSE122497','GSE73002','GSE106817','GSE137140',
+                      'E-MTAB-8026','GSE112264','GSE124158-GPL21263','GSE113486')
+  
+  if (project %in% large.projects) {
+    expr.table <- readRDS(paste0('data/CCMA_Expression.', project, '.RDS'))
+  } else {
+    db <- dbConnect(SQLite(), dbname='data/CCMA_Expression.sqlite')
+    expr.table <- dbReadTable(db, project, row.names=TRUE)
+    dbDisconnect(db)
+    
+  }
+  
+  return (expr.table)
+  
+}
+
+
