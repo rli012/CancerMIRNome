@@ -3,7 +3,7 @@
 ---
 
 #### Citation
-Please cite: [Li, R., et al., CancerMIRNome: an interactive analysis and visualization database for miRNome profiles of human cancer. bioRxiv (2020)](https://www.biorxiv.org/content/10.1101/2020.10.04.325670v3)
+Please cite: [Li, R., et al., CancerMIRNome: an interactive analysis and visualization database for miRNome profiles of human cancer. bioRxiv (2021)](https://www.biorxiv.org/content/10.1101/2020.10.04.325670v3)
 
 #### URL: http://bioinfo.jialab-ucr.org/CancerMIRNome/
 
