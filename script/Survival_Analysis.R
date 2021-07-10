@@ -1,5 +1,5 @@
 
-setwd('~/miRNomes/')
+setwd('~/Publications/CancerMIRNome/')
 ####
 library(cowplot)
 
@@ -59,7 +59,7 @@ for (prj in projects) {
     coxTable <- rbind(coxTable, coeffs)
 
     ###
-    risk.group <- score < median(score, na.rm = T)
+    risk.group <- score > median(score, na.rm = T)
     
     n.high <- sum(risk.group, na.rm=T)
     n.low <- sum(!risk.group, na.rm=T)
@@ -122,7 +122,17 @@ for (prj in projects) {
     colnames(feature) <- c('miRNA.Accession','miRNA.ID','Coefficient')
     
     lasso.list[[prj]] <- feature
-    plot.cvfit.list[[prj]] <- 0
+    
+    anno <- data.frame(x = 1, y = 1, label = 'Warning: no tumor sample')
+    p <- ggplot() + geom_text(data=anno, aes(x,y, label=label), 
+                              color='red', size=5.5, fontface='bold.italic') +
+      xlim(0,2) + ylim(0,2) +
+      theme_bw()+
+      theme(axis.title = element_blank(),
+            axis.text = element_blank(),
+            axis.ticks = element_blank())
+    
+    plot.cvfit.list[[prj]] <- p
     
     next
   }
@@ -188,6 +198,23 @@ saveRDS(lasso.list, file='Survival.Lasso.Feature.TCGA.RDS')
 saveRDS(plot.cvfit.list, file='Survival.Lasso.Plot.TCGA.RDS')
 
 
+# plot.cvfit.list <- readRDS('Survival.Lasso.Plot.TCGA.RDS')
+# plot.cvfit.list[['TCGA-GBM']]
+# 
+# anno <- data.frame(x = 1, y = 1, label = 'Warning: no tumor sample')
+# p <- ggplot() + geom_text(data=anno, aes(x,y, label=label), 
+#                           color='red', size=5.5, fontface='bold.italic') +
+#   xlim(0,2) + ylim(0,2) +
+#   theme_bw()+
+#   theme(axis.title = element_blank(),
+#         axis.text = element_blank(),
+#         axis.ticks = element_blank())
+# 
+# plot.cvfit.list[['TCGA-GBM']] <- p
+# 
+# saveRDS(plot.cvfit.list, file='Survival.Lasso.Plot.TCGA.RDS')
+# 
+
 #####
 lasso.list <- readRDS(file='Survival.Lasso.Feature.TCGA.RDS')
 
@@ -240,6 +267,66 @@ for (prj in projects) {
 }
 
 saveRDS(risk.km.plot.list, file='Survival.KM.Risk.Plot.TCGA.RDS')
+
+
+
+lasso.list <- readRDS(file='Survival.Lasso.Feature.TCGA.RDS')
+
+risk.km.data.list <- list()
+
+for (prj in projects) {
+  
+  message(prj)
+  
+  coef <- lasso.list[[prj]]
+  
+  expr <- mir.tcga[[prj]]
+  meta <- meta.tcga[[prj]]
+  
+  samples <- which(meta$sample_type=='Tumor')
+  expr <- expr[,samples]
+  meta <- meta[samples,]
+  
+  os.time <- as.numeric(meta$OS.time)/30
+  os.time[os.time==0] <- 0.001
+  os.status <- as.numeric(meta$OS)
+  
+  if (nrow(coef) == 0) {
+    dataForKMPlot <- NULL
+  } else {
+    
+    mir <- coef$miRNA.Accession
+    
+    expr <- expr[mir,]
+    coef <- coef$Coefficent
+    
+    if (length(coef)==1) {
+      risk.score <- coef*expr
+    } else {
+      risk.score <- as.numeric(apply(expr, 2, function(v) sum(v*coef)))
+    }
+    
+    risk.threshold <- as.numeric(summary(risk.score)[3])
+    
+    risk.group <- risk.score > risk.threshold
+    
+    dataForKMPlot <- data.frame(expr=risk.score, os.time, os.status)
+    
+  }
+  
+  risk.km.data.list[[prj]] <- dataForKMPlot
+  
+}
+
+saveRDS(risk.km.data.list, file='Survival.KM.Risk.Data.TCGA.RDS')
+
+ggplot(risk.km.data.list[['TCGA-CHOL']])
+
+
+
+
+
+
 
 
 
@@ -310,6 +397,16 @@ for (prj in projects) {
 saveRDS(risk.surv.roc.plot.list, file='Survival.ROC.Risk.Plot.TCGA.RDS')
 
 risk.surv.roc.plot.list[[6]]
+
+
+
+
+
+
+
+
+
+
 
 ########
 

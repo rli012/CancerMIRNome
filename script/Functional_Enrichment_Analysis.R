@@ -93,27 +93,26 @@ for (mir in mirbase$ID) {
   #                  pAdjustMethod = 'BH',
   #                  pvalueCutoff  = 0.05,
   #                  minGSSize     = 10,
-  #                  maxGSSize     = 500,
-  #                  readable      = FALSE)
+  #                  maxGSSize     = 500)
   # 
   # ### ReactomePA
-  # kk <- enrichPathway(gene          = targets,
-  #                     organism      = 'human',
-  #                     pAdjustMethod = 'BH',
-  #                     pvalueCutoff  = 0.05,
-  #                     minGSSize     = 10,
-  #                     maxGSSize     = 500,
-  #                     readable      = FALSE)
+  kk <- enrichPathway(gene          = targets,
+                      organism      = 'human',
+                      pAdjustMethod = 'BH',
+                      pvalueCutoff  = 0.05,
+                      minGSSize     = 10,
+                      maxGSSize     = 500,
+                      readable      = FALSE)
   
   
   ## Disease Ontology
-  kk <- enrichDO(gene          = targets,
-                 ont           = "DO",
-                 pAdjustMethod = 'BH',
-                 pvalueCutoff  = 0.05,
-                 minGSSize     = 10,
-                 maxGSSize     = 500,
-                 readable      = FALSE)
+  # kk <- enrichDO(gene          = targets,
+  #                ont           = "DO",
+  #                pAdjustMethod = 'BH',
+  #                pvalueCutoff  = 0.05,
+  #                minGSSize     = 10,
+  #                maxGSSize     = 500,
+  #                readable      = FALSE)
   # 
   # # ### Network of Cancer Gene
   # kk <- enrichNCG(gene        = targets,
@@ -167,7 +166,7 @@ for (mir in mirbase$ID) {
   # gmtfile <- 'shinyApp/data/MSigDB/h.all.v7.1.entrez.gmt'
   # h <- read.gmt(gmtfile)
   # 
-  # kk <- enricher(gene          = targets, 
+  # kk <- enricher(gene          = targets,
   #                TERM2GENE     = h,
   #                pAdjustMethod = "BH",
   #                pvalueCutoff  = 0.05,
@@ -178,7 +177,7 @@ for (mir in mirbase$ID) {
   # gmtfile <- 'shinyApp/data/MSigDB/c4.cgn.v7.1.entrez.gmt'
   # h <- read.gmt(gmtfile)
   # 
-  # kk <- enricher(gene          = targets, 
+  # kk <- enricher(gene          = targets,
   #                TERM2GENE     = h,
   #                pAdjustMethod = "BH",
   #                pvalueCutoff  = 0.05,
@@ -189,7 +188,7 @@ for (mir in mirbase$ID) {
   # gmtfile <- 'shinyApp/data/MSigDB/c4.cm.v7.1.entrez.gmt'
   # h <- read.gmt(gmtfile)
   # 
-  # kk <- enricher(gene          = targets, 
+  # kk <- enricher(gene          = targets,
   #                TERM2GENE     = h,
   #                pAdjustMethod = "BH",
   #                pvalueCutoff  = 0.05,
@@ -197,10 +196,10 @@ for (mir in mirbase$ID) {
   #                maxGSSize     = 500)
   # 
   # ### MSigDb, C6: oncogenic signatures
-  # gmtfile <- 'shinyApp/data/MSigDB/c6.v7.1.entrez.gmt'
+  # gmtfile <- 'shinyApp/data/MSigDB/c6.all.v7.1.entrez.gmt'
   # h <- read.gmt(gmtfile)
   # 
-  # kk <- enricher(gene          = targets, 
+  # kk <- enricher(gene          = targets,
   #                TERM2GENE     = h,
   #                pAdjustMethod = "BH",
   #                pvalueCutoff  = 0.05,
@@ -208,10 +207,10 @@ for (mir in mirbase$ID) {
   #                maxGSSize     = 500)
   # 
   # ### MSigDb, C7: immunologic signatures
-  # gmtfile <- 'shinyApp/data/MSigDB/c7.v7.1.entrez.gmt'
+  # gmtfile <- 'shinyApp/data/MSigDB/c7.all.v7.1.entrez.gmt'
   # h <- read.gmt(gmtfile)
   # 
-  # kk <- enricher(gene          = targets, 
+  # kk <- enricher(gene          = targets,
   #                TERM2GENE     = h,
   #                pAdjustMethod = "BH",
   #                pvalueCutoff  = 0.05,
@@ -276,7 +275,7 @@ for (mir in mirbase$ID) {
 
 
 saveRDS(KEGG, file='shinyApp/data/miRTarBase.KEGG.RDS')
-saveRDS(KEGG, file='shinyApp/data/miRTarBase.REACTOME.RDS')
+saveRDS(KEGG, file='shinyApp/data/miRTarBase.REACTOME.RDS') #
 
 saveRDS(KEGG, file='shinyApp/data/miRTarBase.DO.RDS')
 saveRDS(KEGG, file='shinyApp/data/miRTarBase.NCG.RDS')
@@ -291,6 +290,47 @@ saveRDS(KEGG, file='shinyApp/data/miRTarBase.MSigDBHALLMARK.RDS')
 saveRDS(KEGG, file='shinyApp/data/miRTarBase.MSigDBC4CGN.RDS')
 saveRDS(KEGG, file='shinyApp/data/miRTarBase.MSigDBC4CM.RDS')
 saveRDS(KEGG, file='shinyApp/data/miRTarBase.MSigDBC6.RDS')
-saveRDS(KEGG, file='shinyApp/data/miRTarBase.MSigDBC7.RDS')
+saveRDS(KEGG, file='shinyApp/data/miRTarBase.MSigDBC7.RDS') #
+
+genesets <- c('KEGG','REACTOME','DO','NCG','DGN',
+              'GOBP','GOCC','GOMF',
+              'MSigDBHALLMARK','MSigDBC4CGN','MSigDBC4CM',
+              'MSigDBC6','MSigDBC7')
+
+enrichment.list <- list()
+for (geneset in genesets) {
+  
+  enrichment.list[[geneset]] <- readRDS(paste0('shinyApp/data/miRTarBase.',geneset,'.RDS'))
+  
+  enrichment.list[[geneset]] <- lapply(enrichment.list[[geneset]],
+                                       function(x) {
+                                         x$Symbol <- gsub('/', '; ', x$Symbol)
+                                         return(x)
+                                       }
+                                       )
+    
+  
+  
+} 
+
+saveRDS(enrichment.list, file='shinyApp/data/Enrichment.miRTarBase.RDS')
 
 
+View(enrichment.list[[geneset]])
+enrichment.list[[geneset]][[9]]
+
+
+enrichment.list <- readRDS(file='shinyApp/data/Enrichment.miRTarBase.RDS')
+enrichment.list
+
+names(enrichment.list)
+
+names(enrichment.list[['KEGG']])
+enrich.table <- enrichment.list[['KEGG']][['MIMAT0000062']]
+enrich.table$Count <- paste0(enrich.table$Count, '/', enrich.table$List.Total)
+
+enrich.table$Pop.Hits <- paste0(enrich.table$Pop.Hits, '/', enrich.table$Pop.Total)
+
+colnames(enrich.table)[c(3,5)] <- c('Count/List.Total','Pop.Hits/Pop.Total')
+enrich.table <- enrich.table[-c(4,6,7)]
+enrich.table

@@ -1,5 +1,6 @@
 
-setwd('C:\\Users/rli3/Documents/miRNomes/')
+setwd('C:\\Users/rli3/Documents/Publications/CancerMIRNome/')
+library(RSQLite)
 
 ccma.primary <- read.delim('shinyApp/data/miRNomes_Datasets_Primary.txt', header = T, sep = '\t', stringsAsFactors = F)
 View(ccma.primary)
@@ -26,7 +27,7 @@ for (i in 1:nrow(ccma)) {
   
   exprData <- readRDS(file=paste0('shinyApp/data/Datasets/', accession, '_', platform, '_Expression.RDS'))
   phenoData <- readRDS(file=paste0('shinyApp/data/Datasets/', accession, '_', platform, '_Metadata.RDS'))
-  
+
   expr.ccma[[dataset]] <- exprData
   meta.ccma[[dataset]] <- phenoData
   
@@ -41,7 +42,7 @@ ccma$Dataset[1:2]
 
 meta.ccma[[ccma$Dataset[1]]]
 
-expr.ccma <- readRDS(file='shinyApp/data/CCMA_Expression.RDS')
+expr.ccma <- readRDS(file='shinyApp/data/miRNomes_Expression.RDS')
 x <- lapply(expr.ccma, nrow)
 x[which(x>1000 & x<2000)]
 length(x[which(x>1000 & x<2000)])
@@ -49,6 +50,67 @@ length(x[which(x>1000 & x<2000)])
 
 x[which(x<1000)]
 length(x[which(x<1000)])
+
+
+names(expr.ccma)
+
+
+
+library(RSQLite)
+db <- dbConnect(SQLite(), dbname='CCMA_Expression.sqlite')
+dbListTables(db)
+
+for (project in names(expr.ccma)) {
+  print (project)
+  
+  expr.table <- data.frame(expr.ccma[[project]], stringsAsFactors = F)
+  #colnames(expr.table) <- gsub('.', '-', colnames(expr.table), fixed = T)
+  #expr.table <- data.frame(expr.tcga.list[[project]][,1:900], stringsAsFactors = F)
+  
+  if (ncol(expr.table)>900) {
+    saveRDS(expr.table, file=paste0('shinyApp/data/CCMA_Expression.', project, '.RDS'))
+    next
+    
+  }
+  
+  dbWriteTable(db, project, expr.table, row.names = TRUE)
+}
+
+
+dbListTables(db)
+
+dbDisconnect(db)
+
+
+getCCMATable <- function(project) {
+  db <- dbConnect(SQLite(), dbname='CCMA_Expression.sqlite')
+  expr.table <- dbReadTable(db, project, row.names=TRUE)
+  dbDisconnect(db)
+  
+  return (expr.table)
+  
+}
+
+test <- getCCMATable('GSE39845')
+View(test)
+
+projects <- dbListTables(db)
+projects
+
+expr.data <- list()
+for (prj in projects) {
+  expr.data[[prj]] <- getCCMATable(prj)
+  
+}
+
+
+
+
+
+
+
+
+
 
 #################
 
@@ -209,6 +271,54 @@ for (project in projects$Project[1:33]) {
 }
 
 saveRDS(expr.tcga.list, file='data/fromTCGA/RNAseq_Expression_TCGA.miRTarBase.RDS')
+
+
+##############
+expr.tcga.list <- readRDS(file='shinyApp/data/RNAseq_Expression_TCGA.miRTarBase.RDS')
+names(expr.tcga.list)
+
+saveRDS(expr.tcga.list[['TCGA-BRCA']], file='RNAseq_Expression_TCGA.miRTarBase.TCGA-BRCA.RDS')
+
+
+library(RSQLite)
+db <- dbConnect(SQLite(), dbname='RNAseq_Expression_TCGA.miRTarBase.sqlite')
+dbListTables(db)
+
+for (project in names(expr.tcga.list)[2:33]) {
+  print (project)
+  
+  expr.table <- data.frame(expr.tcga.list[[project]], stringsAsFactors = F)
+  colnames(expr.table) <- gsub('.', '-', colnames(expr.table), fixed = T)
+  #expr.table <- data.frame(expr.tcga.list[[project]][,1:900], stringsAsFactors = F)
+  dbWriteTable(db, project, expr.table, row.names = TRUE)
+}
+
+
+dbListTables(db)
+dbListFields(db, "TCGA-BLCA")
+
+expr.table <- dbReadTable(db, "TCGA-BLCA", row.names=FALSE)
+expr.table
+
+datatable(as.data.frame(expr.table)[1:5,], 
+          options = list(scrollX = TRUE, pageLength = 5))
+
+dbDisconnect(db)
+
+
+getRNATable <- function(project) {
+  db <- dbConnect(SQLite(), dbname='RNAseq_Expression_TCGA.miRTarBase.sqlite')
+  expr.table <- dbReadTable(db, project, row.names=TRUE)
+  dbDisconnect(db)
+  
+  return (expr.table)
+  
+}
+
+test <- getRNATable('TCGA-CHOL')
+View(test)
+
+
 
 
 #####

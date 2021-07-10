@@ -1,6 +1,6 @@
 
 ###
-setwd('~/miRNomes/')
+setwd('~/CancerMIRNome/')
 
 meta.tcga <- readRDS('shinyApp/data/Metadata_TCGA.RDS')
 mir.tcga <- readRDS('shinyApp/data/miRNA_Expression_TCGA.RDS')
@@ -61,13 +61,18 @@ for (prj in projects) {
                           Coefficient=feature$Coefficient,
                           row.names = NULL,
                           stringsAsFactors = F)
+    
+    o <- order(abs(feature$Coefficient), decreasing = T)
+    feature <- feature[o,]
+    
 
   } else {
     
-    anno <- data.frame(x = 1, y = 1, label = 'No feature')
+    anno <- data.frame(x = 1, y = 1, label = 'Warning: no feature is selected')
     
     p <- ggplot() + geom_text(data=anno, aes(x,y, label=label), 
-                              color='red', size=5) +
+                              color='red', size=5.5, fontface='bold.italic') +
+      xlim(0,2) + ylim(0,2) +
       theme_bw()+
       theme(axis.title = element_blank(),
             axis.text = element_blank(),
@@ -87,4 +92,12 @@ for (prj in projects) {
 
 saveRDS(feature.plot.list, file='Lasso.Feature.Plot.RDS')
 saveRDS(feature.table.list, file='Lasso.Feature.Table.RDS')
+
+
+
+plot(feature.plot.list[[1]])
+
+feature.plot.list[[2]]
+
+
 

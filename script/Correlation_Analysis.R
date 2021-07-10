@@ -1,4 +1,4 @@
-setwd('~/miRNomes/')
+setwd('~/CancerMIRNome/')
 
 mirtarbase <- readRDS(file='shinyApp/data/miRTarBase_hsa_MTI.RDS')
 filter <- which(duplicated(paste(mirtarbase$miRBase.Accession, mirtarbase$Target.Ensembl)))
@@ -93,10 +93,10 @@ for (prj in projects) {
     targets <- intersect(targets, rownames(rna.expr))
     
     cor.val <- apply(rna.expr[targets,], 1, function(v) 
-      cor.test(mir.expr[mir,], v, alternative='two.sided', method = 'spearman')$estimate)
+      cor.test(mir.expr[mir,], v, alternative='two.sided', method = 'pearson')$estimate)
     
     cor.p <- apply(rna.expr[targets,], 1, function(v) 
-      cor.test(mir.expr[mir,], v, alternative='two.sided', method = 'spearman')$p.value)
+      cor.test(mir.expr[mir,], v, alternative='two.sided', method = 'pearson')$p.value)
     
     cor.fdr <- p.adjust(cor.p, method = 'BH')
     
@@ -126,7 +126,136 @@ for (prj in projects) {
 
 }
 
-saveRDS(cor.list, file='shinyApp/data/Correlation.miRTarBase.RDS')
+saveRDS(cor.list, file='shinyApp/data/Pearson.Correlation.miRTarBase.RDS')
 
-cor.list <- readRDS(file='shinyApp/data/Correlation.miRTarBase.RDS')
-lapply(cor.list, length)
+cor.list <- readRDS(file='shinyApp/data/Pearson.Correlation.miRTarBase.RDS')
+names(cor.list)
+cor.list[[1]]
+
+library(RSQLite)
+db <- dbConnect(SQLite(), dbname='Pearson.Correlation.miRTarBase.sqlite')
+dbListTables(db)
+names(cor.list)
+
+for (project in names(cor.list)) {
+  print (project)
+  
+  cor.table <- do.call(rbind, cor.list[[project]])
+  
+  dbWriteTable(db, project, cor.table, row.names = FALSE)
+}
+
+
+dbListTables(db)
+dbListFields(db, "TCGA-BLCA")
+
+cor.table <- dbReadTable(db, "TCGA-BLCA", row.names=FALSE)
+cor.table
+
+datatable(as.data.frame(cor.table)[1:5,], 
+          options = list(scrollX = TRUE, pageLength = 5))
+
+dbDisconnect(db)
+
+
+
+getCorTable <- function(project, mir) {
+  db <- dbConnect(SQLite(), dbname='Correlation.miRTarBase.sqlite')
+  cor.table <- dbReadTable(db, project, row.names=FALSE)
+  dbDisconnect(db)
+  
+  return (cor.table)
+  
+}
+
+
+test <- getCorTable('TCGA-BLCA')
+test
+
+
+
+getCorTable <- function(project, mir) {
+
+  db <- dbConnect(SQLite(), dbname='Correlation.miRTarBase.sqlite')
+  
+  CMD <- paste0("SELECT * FROM [", project, "] WHERE [miRNA.Accession] == '", mir, "'")
+  
+  query <- dbSendQuery(db, CMD)
+  cor.table <- dbFetch(query)
+  
+  dbClearResult(query)
+  dbDisconnect(db)
+  
+  return (cor.table)
+  
+}
+
+
+project <- 'TCGA-BLCA'
+mir <- 'MIMAT0000062'
+CMD <- paste0("SELECT * FROM [", project, "] WHERE [miRNA.Accession] == '", mir, "'")
+CMD
+
+res <- dbSendQuery(db, CMD)
+
+res <- dbSendQuery(db, "SELECT * FROM [TCGA-BLCA] WHERE [miRNA.Accession] == 'MIMAT0000062'")
+test <- dbFetch(res)
+
+dbClearResult(res)
+
+test
+
+dbDisconnect(db)
+
+test <- getCorTable(project = 'TCGA-BLCA', mir = 'MIMAT0000062')
+test
+
+
+
+########## SLOW
+
+db <- dbConnect(SQLite(), dbname='shinyApp/data/Correlation.miRTarBase.sqlite')
+dbListTables(db)
+
+for (project in names(cor.list)) {
+  print (project)
+  
+  for (mir in names(cor.list[[project]])) {
+    cor.table <- cor.list[[project]][[mir]]
+    dbWriteTable(db, paste0(project,'.',mir), cor.table, row.names = FALSE)
+  }
+
+}
+
+
+dbListTables(db)
+dbListFields(db, "TCGA-BLCA.MIMAT0015377")
+
+cor.table <- dbReadTable(db, "TCGA-BLCA.MIMAT0015377", row.names=FALSE)
+cor.table
+
+
+datatable(as.data.frame(cor.table)[1:5,], 
+          options = list(scrollX = TRUE, pageLength = 5))
+
+dbDisconnect(db)
+
+
+getCorTable <- function(project, mir) {
+  db <- dbConnect(SQLite(), dbname='shinyApp/data/Correlation.miRTarBase.sqlite')
+  cor.table <- dbReadTable(db, paste0(project,'.',mir), row.names=FALSE)
+  
+  dbDisconnect(db)
+  
+  return (cor.table)
+  
+  
+  
+}
+
+test <- getCorTable('TCGA-BLCA', 'MIMAT0015377')
+test
+
+
+
+
