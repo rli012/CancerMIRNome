@@ -26,7 +26,8 @@ library(pheatmap)
 library(plotly)
 library(glmnet)
 library(heatmaply)
-
+library(htmlwidgets)
+library(slickR)
 
 library(dashboardthemes)
 library(shinythemes)
@@ -57,8 +58,9 @@ projects.tcga.sub <- c("TCGA-BLCA","TCGA-BRCA","TCGA-CESC","TCGA-CHOL",
 
 ### CCMA Datasets
 ccma.datasets <- readRDS('data/miRNomes_Datasets.RDS')
+ccma.datasets$Name <- paste0(ccma.datasets$Dataset, ': ', ccma.datasets$Title)
 ccma.primary <- readRDS('data/miRNomes_Datasets_Primary.RDS')
-
+ccma.primary <- ccma.primary[,c(1:3,5)]
 
 ### TCGA Data
 meta.tcga <- readRDS('data/Metadata_TCGA.RDS')
@@ -127,6 +129,29 @@ mir.id <- selectizeInput(inputId = "mir.id", label=h4(strong('Search a miRNA')),
                          ))
 
 
+circulating.expression.default <- 'GSE106817' # hsa-let-7a-5p
+#mir.annotation <- readRDS('data/miRBase_10.0_22.RDS')
+
+circulating.expression.id <- selectizeInput(inputId = "circulating.expression.id", 
+                                            label=h4(strong('Select a dataset')), #list(h4('Search a miRNA:'), icon('search', 'fa-1.5x')),# h4(strong('miRNA'))
+                                            choices = NULL, selected = circulating.expression.default, #mir.default, 
+                                            multiple = FALSE, width = 600,
+                                            options = list(placeholder = 'e.g. GSE106817', 
+                                                           server = TRUE, selectOnTab=TRUE,
+                                                           searchField = c('Name', 'Disease'),
+                                                           labelField = "Name",
+                                                           valueField = "Dataset",
+                                                           #maxOptions = 5,
+                                                           render = I("{option: function(item, escape) 
+                                                   {var gene = '<div>' + '<strong>' + escape(item.Name) + '</strong>' + '<ul>';
+                                                   gene = gene + '<li>' + 'Sample types: ' + item.Disease + '</li>' + '</ul>' + '</div>';
+                                                   return gene
+                                                   }
+                                                   }")
+                                            ))
+
+
+
 ###### TCGA Project
 
 project.default <- 'TCGA-BLCA'
@@ -158,8 +183,9 @@ gene.sets <- c('Kyoto Encyclopedia of Genes and Genomes (KEGG)' = 'KEGG',
                'MSigDB - H:HALLMARK' = 'MSigDBHALLMARK',
                'MSigDB - C4:Cancer Gene Neighborhoods' = 'MSigDBC4CGN',
                'MSigDB - C4:Cancer Modules' = 'MSigDBC4CM',
-               'MSigDB - C6:Oncogenic Signatures' = 'MSigDBC6',
-               'MSigDB - C7:Immunologic Signatures' = 'MSigDBC7')
+               'MSigDB - C6:Oncogenic Signatures' = 'MSigDBC6'#,
+               #'MSigDB - C7:Immunologic Signatures' = 'MSigDBC7'
+               )
 
 geneset.id.default <- gene.sets[1]
 geneset.id <- selectizeInput(inputId = "geneset.id", label=h5(strong('Gene Sets:')),# h4(strong('miRNA'))
@@ -198,6 +224,8 @@ table.download.button <- JS('$("button.buttons-copy").css("font-size",12);
 server <- function(input, output, session) { 
   
   updateSelectizeInput(session, 'mir.id', choices = mir.annotation, selected = mir.default, server = TRUE)
+  updateSelectizeInput(session, 'circulating.expression.id', choices = ccma.datasets, selected = circulating.expression.default, server = TRUE)
+  
   updateSelectizeInput(session, 'project.id', choices = projects.tcga, selected = project.default, server = TRUE)
   updateSelectizeInput(session, 'project.id.cor', choices = projects.tcga, selected = project.default, server = TRUE)
   updateSelectizeInput(session, 'geneset.id', choices = gene.sets, selected = geneset.id.default, server = TRUE)
@@ -211,6 +239,16 @@ server <- function(input, output, session) {
   # })
   
   
+  output$slick_output <- renderSlickR({
+    
+    imgs <- c('img/figure1.jpg','img/figure2.jpg','img/figure3.jpg')
+    slickR(imgs, height = 500, width='100%') + settings(dots = TRUE, autoplay = TRUE, autoplaySpeed = 3000)
+    
+  })
+  
+  
+  
+  
   ################################################################
   ######################## Information ###########################
   
@@ -222,14 +260,21 @@ server <- function(input, output, session) {
       mir.id <- input$mir.id
       mir.name <- mir.annotation[mir.id, 'Name']
       mir.url <- paste0('http://www.mirbase.org/cgi-bin/mature.pl?mature_acc=', mir.id)
-      mir.url <- a(mir.name, href = mir.url, target="_blank", style = "font-size: 150%;")
-      tagList(mir.url)
+      mir.url <- a(mir.name, href = mir.url, target="_blank", style = "font-size:150%; color:#3b8dbc; font-family:Georgia") # #fabd03
+      
+      if (is.na(mir.name)) {
+        return('')
+      } else {
+        tagList(mir.url)
+      }
+      
+      
     })
     
     output$mir.preid <- renderText({ 
       mir.id <- input$mir.id
       mir.preid <- mir.annotation[mir.id, 'Previous_ID']
-      mir.preid <- paste0('Previous IDs: ', mir.preid)
+      mir.preid <- paste0('Previous IDs: ', ifelse(is.na(mir.preid), '', mir.preid))
       mir.preid
     })
     
@@ -238,14 +283,14 @@ server <- function(input, output, session) {
     output$mir.info <- renderText({ 
       mir.id <- input$mir.id
       mir.name <- mir.annotation[mir.id, 'Name']
-      mir.info <- paste0('Accession: ', mir.id)
+      mir.info <- paste0('Accession: ', ifelse(is.na(mir.id), '', mir.id))
       mir.info
     })
     
     output$mir.seq <- renderText({ 
       mir.id <- input$mir.id
       mir.seq <- mir.annotation[mir.id, 'Sequence']
-      mir.seq <- paste0('Sequence: ', mir.seq)
+      mir.seq <- paste0('Sequence: ', ifelse(is.na(mir.seq), '', mir.seq))
       mir.seq
     })
     
@@ -255,22 +300,27 @@ server <- function(input, output, session) {
       mir.name <- mir.annotation[mir.id, 'Name']
       mir.encori <- paste0('http://starbase.sysu.edu.cn/agoClipRNA.php?source=mRNA&flag=miRNA&clade=mammal&genome=human&assembly=hg19&miRNA=',
                            mir.name, '&clipNum=&deNum=&panNum=&proNum=&program=&target=')
-      mir.encori <- a('ENCORI', href = mir.encori, target="_blank", style = "font-size: 100%;")
+      mir.encori <- a('ENCORI', href = mir.encori, target="_blank", style = "font-size:100%; color:#3b8dbc")
       
       mir.mirdb <- paste0('http://mirdb.org/cgi-bin/search.cgi?searchType=miRNA&full=mirbase&searchBox=',mir.id)
-      mir.mirdb <- a('miRDB', href = mir.mirdb, target="_blank", style = "font-size: 100%;")
+      mir.mirdb <- a('miRDB', href = mir.mirdb, target="_blank", style = "font-size:100%; color:#3b8dbc;")
       
-      mir.mirtarbase <- paste0('http://mirtarbase.cuhk.edu.cn/php/search.php?opt=b_mirna&org=hsa&bname=',mir.name)
-      mir.mirtarbase <- a('miRTarBase', href = mir.mirtarbase, target="_blank", style = "font-size: 100%;")
+      mir.mirtarbase <- paste0('https://mirtarbase.cuhk.edu.cn/~miRTarBase/miRTarBase_2019/php/search.php?org=hsa&opt=mirna_id&kw=',mir.name)
+      mir.mirtarbase <- a('miRTarBase', href = mir.mirtarbase, target="_blank", style = "font-size:100%; color:#3b8dbc;")
       
       mir.targetscan <- paste0('http://www.targetscan.org/cgi-bin/targetscan/vert_72/targetscan.cgi?mirg=',mir.name)
-      mir.targetscan <- a('TargetScan', href = mir.targetscan, target="_blank", style = "font-size: 100%;")
+      mir.targetscan <- a('TargetScan', href = mir.targetscan, target="_blank", style = "font-size:100%; color:#3b8dbc;")
       
       mir.dianatarbase <- paste0('http://diana.imis.athena-innovation.gr/DianaTools/index.php?r=tarbase/index&mirnas=',mir.name)
-      mir.dianatarbase <- a('Diana-TarBase', href = mir.dianatarbase, target="_blank", style = "font-size: 100%;")
+      mir.dianatarbase <- a('Diana-TarBase', href = mir.dianatarbase, target="_blank", style = "font-size:100%; color:#3b8dbc;")
       
-      tagList("Targets:", mir.encori, mir.mirdb, mir.mirtarbase, mir.targetscan, mir.dianatarbase)
-    })
+      if (is.na(mir.name)) {
+        tagList("Targets:")
+      } else {
+        tagList("Targets:", mir.encori, mir.mirdb, mir.mirtarbase, mir.targetscan, mir.dianatarbase)
+      }
+      
+      })
     
     
     
@@ -285,19 +335,23 @@ server <- function(input, output, session) {
     
     req(input$mir.id)
     
-    tcga.overview <- reactiveValues()
+    mir.id <- input$mir.id
+    mir.name <- mir.annotation[mir.id, 'Name']
     
+    tcga.overview <- reactiveValues()
     
     output$tcga_boxplot <- renderPlot({
       
-      mir.id <- input$mir.id
-      mir.name <- mir.annotation[mir.id, 'Name']
+      if (mir.id=='') {
+        return()
+      }
       
+      sample <- unlist(lapply(meta.tcga, function(x) x[,'sample']))
       group <- unlist(lapply(meta.tcga, function(x) x[,'sample_type']))
       expr <- unlist(lapply(mir.tcga, function(x) x[mir.id,]))
       project <- unlist(lapply(meta.tcga, function(x) x[,'project_id']))
       
-      dataForBoxPlot <- data.frame(expr, group, project, mir=mir.name)
+      dataForBoxPlot <- data.frame(mir=mir.name, project, sample, group, expr, stringsAsFactors = F)
       
       tcga.overview$box.data <- dataForBoxPlot
       
@@ -310,14 +364,14 @@ server <- function(input, output, session) {
     
     
     output$tcga.box.summ.downbttn.csv <- downloadHandler(
-      filename = function(){paste('box.csv', sep = '')},
+      filename = function(){paste(mir.name,'.TCGA_PanCancer_Expression_Data.csv', sep = '')},
       
       content = function(file){
         write.csv(tcga.overview$box.data, file, row.names = FALSE, quote = F)
       })
     
     output$tcga.box.summ.downbttn.png <- downloadHandler(
-      filename = function(){paste('box.png', sep = '')},
+      filename = function(){paste(mir.name,'.TCGA_PanCancer_Expression_BoxPlot.png', sep = '')},
       
       content = function(file){
         png(file, width = 1000, height = 500)
@@ -326,7 +380,7 @@ server <- function(input, output, session) {
       })
     
     output$tcga.box.summ.downbttn.pdf <- downloadHandler(
-      filename = function(){paste('box.pdf', sep = '')},
+      filename = function(){paste(mir.name,'.TCGA_PanCancer_Expression_BoxPlot.pdf', sep = '')},
       
       content = function(file){
         pdf(file, width = 10, height = 5)
@@ -337,13 +391,14 @@ server <- function(input, output, session) {
 
     output$tcga_rocplot_forest <- renderPlot({
       
-      mir.id <- input$mir.id
-      mir.name <- mir.annotation[mir.id, 'Name']
+      if (mir.id=='') {
+        return()
+      }
       
+      #sample <- unlist(lapply(meta.tcga, function(x) x[,'sample']))
       group <- unlist(lapply(meta.tcga, function(x) x[,'sample_type']))
       expr <- unlist(lapply(mir.tcga, function(x) x[mir.id,]))
       project <- unlist(lapply(meta.tcga, function(x) x[,'project_id']))
-      
       
       dataForForestPlot <- c()
       
@@ -378,7 +433,8 @@ server <- function(input, output, session) {
         # pvalue <- formatC(auc.test$p.value, format = 'e', digits = 2)
         
         dataForForestPlot <- rbind(dataForForestPlot, 
-                                   c(n.tumor, n.normal, auc, auc.ci.lower95, auc.ci.upper95)) #, pvalue
+                                   c(#mir=mir.name, project=prj, 
+                                     n.tumor, n.normal, auc, auc.ci.lower95, auc.ci.upper95)) #, pvalue
         
       }
       
@@ -411,14 +467,14 @@ server <- function(input, output, session) {
     
     
     output$tcga.roc.forest.downbttn.csv <- downloadHandler(
-      filename = function(){paste('roc.forest.csv', sep = '')},
+      filename = function(){paste(mir.name,'.TCGA_PanCancer_ROC_Data.csv', sep = '')},
       
       content = function(file){
         write.csv(tcga.overview$roc.forest.data, file, row.names = FALSE, quote = F)
       })
     
     output$tcga.roc.forest.downbttn.png <- downloadHandler(
-      filename = function(){paste('roc.forest.png', sep = '')},
+      filename = function(){paste(mir.name,'.TCGA_PanCancer_ROC_ForestPlot.png', sep = '')},
       
       content = function(file){
         png(file, width = 1000, height = 500)
@@ -427,7 +483,7 @@ server <- function(input, output, session) {
       })
     
     output$tcga.roc.forest.downbttn.pdf <- downloadHandler(
-      filename = function(){paste('roc.forest.pdf', sep = '')},
+      filename = function(){paste(mir.name,'.TCGA_PanCancer_ROC_ForestPlot.pdf', sep = '')},
       
       content = function(file){
         pdf(file, width = 13, height = 11)
@@ -439,6 +495,11 @@ server <- function(input, output, session) {
     output$tcga_km_forest <- renderPlot({
       
       mir.id <- input$mir.id
+      
+      if (mir.id=='') {
+        return()
+      }
+      
       mir.name <- mir.annotation[mir.id, 'Name']
       
       group <- unlist(lapply(meta.tcga, function(x) x[,'sample_type']))
@@ -494,14 +555,14 @@ server <- function(input, output, session) {
     
     
     output$tcga.km.forest.downbttn.csv <- downloadHandler(
-      filename = function(){paste('km.forest.csv', sep = '')},
+      filename = function(){paste(mir.name,'.TCGA_PanCancer_KM_Survival_Data.csv', sep = '')},
       
       content = function(file){
         write.csv(tcga.overview$km.forest.data, file, row.names = FALSE, quote = F)
       })
     
     output$tcga.km.forest.downbttn.png <- downloadHandler(
-      filename = function(){paste('km.forest.png', sep = '')},
+      filename = function(){paste(mir.name,'.TCGA_PanCancer_KM_Survival_ForestPlot.png', sep = '')},
       
       content = function(file){
         png(file, width = 1350, height = 1350)
@@ -510,7 +571,7 @@ server <- function(input, output, session) {
       })
     
     output$tcga.km.forest.downbttn.pdf <- downloadHandler(
-      filename = function(){paste('km.forest.pdf', sep = '')},
+      filename = function(){paste(mir.name,'.TCGA_PanCancer_KM_Survival_ForestPlot.pdf', sep = '')},
       
       content = function(file){
         pdf(file, width = 13.5, height = 13.5)
@@ -522,20 +583,24 @@ server <- function(input, output, session) {
     
     observeEvent(input$project.id, {
       
+      project <- input$project.id
+      
       tcga.mir.project <- reactiveValues()
       
       output$tcga_violinplot <- renderPlot({
         
         mir.id <- input$mir.id
-        mir.name <- mir.annotation[mir.id, 'Name']
         
-        project <- input$project.id
+        if (mir.id=='') {
+          return()
+        }
         
         group <- meta.tcga[[project]][,'sample_type']
         expr <- mir.tcga[[project]][mir.id,]
+        sample <- meta.tcga[[project]][,'sample']
         
-        dataForBoxPlot <- data.frame(expr, group, mir.id, project,
-                                     stringsAsFactors = F)
+        dataForBoxPlot <- data.frame(mir=mir.name, project, sample, 
+                                     group, expr, stringsAsFactors = F)
         
         tcga.mir.project$box.data <- dataForBoxPlot
         
@@ -549,14 +614,14 @@ server <- function(input, output, session) {
       
       
       output$tcga.box.downbttn.csv <- downloadHandler(
-        filename = function(){paste('box.csv', sep = '')},
+        filename = function(){paste(mir.name,'.', project, '.Expression_Data.csv', sep = '')},
         
         content = function(file){
           write.csv(tcga.mir.project$box.data, file, row.names = FALSE, quote = F)
           })
       
       output$tcga.box.downbttn.png <- downloadHandler(
-        filename = function(){paste('box.png', sep = '')},
+        filename = function(){paste(mir.name,'.', project, '.Expression_BoxPlot.png', sep = '')},
         
         content = function(file){
           png(file, width = 500, height = 500)
@@ -565,7 +630,7 @@ server <- function(input, output, session) {
         })
       
       output$tcga.box.downbttn.pdf <- downloadHandler(
-        filename = function(){paste('box.pdf', sep = '')},
+        filename = function(){paste(mir.name,'.', project, '.Expression_BoxPlot.pdf', sep = '')},
         
         content = function(file){
           pdf(file, width = 5, height = 5)
@@ -576,15 +641,16 @@ server <- function(input, output, session) {
       
       output$tcga_rocplot <- renderPlot({
         
-        mir.id <- input$mir.id
-        mir.name <- mir.annotation[mir.id, 'Name']
-        
-        project <- input$project.id
+        if (mir.id=='') {
+          return()
+        }
         
         group <- meta.tcga[[project]][,'sample_type']
         expr <- mir.tcga[[project]][mir.id,]
+        sample <- meta.tcga[[project]][,'sample']
         
-        dataForROCPlot <- data.frame(expr, group)
+        dataForROCPlot <- data.frame(mir=mir.name, project, sample, group, expr,
+                                     stringsAsFactors = F)
         
         tcga.mir.project$roc.data <- dataForROCPlot
         
@@ -600,14 +666,14 @@ server <- function(input, output, session) {
       
       
       output$tcga.roc.downbttn.csv <- downloadHandler(
-        filename = function(){paste('roc.csv', sep = '')},
+        filename = function(){paste(mir.name,'.', project, '.ROC_Data.csv', sep = '')},
         
         content = function(file){
           write.csv(tcga.mir.project$roc.data, file, row.names = FALSE, quote = F)
         })
       
       output$tcga.roc.downbttn.png <- downloadHandler(
-        filename = function(){paste('roc.png', sep = '')},
+        filename = function(){paste(mir.name,'.', project, '.ROC_Curve.png', sep = '')},
         
         content = function(file){
           png(file, width = 500, height = 500)
@@ -616,7 +682,7 @@ server <- function(input, output, session) {
         })
       
       output$tcga.roc.downbttn.pdf <- downloadHandler(
-        filename = function(){paste('roc.pdf', sep = '')},
+        filename = function(){paste(mir.name,'.', project, '.ROC_Curve.pdf', sep = '')},
         
         content = function(file){
           pdf(file, width = 5, height = 5)
@@ -624,23 +690,26 @@ server <- function(input, output, session) {
           dev.off()
         })
       
-      
-      
-      
       output$tcga_km_plot <- renderPlot({
         
-        mir.id <- input$mir.id
-        mir.name <- mir.annotation[mir.id, 'Name']
-        
-        project <- input$project.id
+        if (mir.id=='') {
+          return()
+        }
         
         group <- meta.tcga[[project]][,'sample_type']
         expr <- mir.tcga[[project]][mir.id,]
+        sample <- meta.tcga[[project]][,'sample']
+        
+        idx <- which(group=='Tumor')
         
         os.time <- as.numeric(meta.tcga[[project]][,'OS.time'])/30
         os.status <- as.numeric(meta.tcga[[project]][,'OS'])
         
-        dataForKMPlot <- data.frame(expr, os.time, os.status, mir.id, project,
+        dataForKMPlot <- data.frame(mir=mir.name,project,
+                                    sample=sample[idx],
+                                    expr=expr[idx], 
+                                    os.time=os.time[idx], 
+                                    os.status=os.status[idx],
                                     stringsAsFactors = F)
         
         p <- KMPlotFun(dataForKMPlot)
@@ -655,14 +724,14 @@ server <- function(input, output, session) {
       
       
       output$tcga.km.downbttn.csv <- downloadHandler(
-        filename = function(){paste('km.csv', sep = '')},
+        filename = function(){paste(mir.name,'.', project, '.KM_Survival_Data.csv', sep = '')},
         
         content = function(file){
           write.csv(tcga.mir.project$km.data, file, row.names = FALSE, quote = F)
         })
       
       output$tcga.km.downbttn.png <- downloadHandler(
-        filename = function(){paste('km.png', sep = '')},
+        filename = function(){paste(mir.name,'.', project, '.KM_Survival_Curve.png', sep = '')},
         
         content = function(file){
           png(file, width = 500, height = 500)
@@ -671,7 +740,7 @@ server <- function(input, output, session) {
         })
       
       output$tcga.km.downbttn.pdf <- downloadHandler(
-        filename = function(){paste('km.pdf', sep = '')},
+        filename = function(){paste(mir.name,'.', project, '.KM_Survival_Curve.pdf', sep = '')},
         
         content = function(file){
           pdf(file, width = 5, height = 5)
@@ -710,6 +779,7 @@ server <- function(input, output, session) {
     observeEvent(input$correlation_rows_selected, {
       
       mir <- input$mir.id
+      
       project <- input$project.id.cor
       
       cor.table <- cor.list$cor.table #getCorTable(project = project, mir = mir)
@@ -724,6 +794,10 @@ server <- function(input, output, session) {
       tcga.cor <- reactiveValues()
       
       output$cor_plot <- renderPlot({
+        
+        if (mir.id=='') {
+          return()
+        }
         
         rna.tcga <- getRNATable(project)
         colnames(rna.tcga) <- gsub('.', '-', colnames(rna.tcga), fixed = T)
@@ -754,14 +828,16 @@ server <- function(input, output, session) {
       
       
       output$tcga.cor.downbttn.csv <- downloadHandler(
-        filename = function(){paste('cor.csv', sep = '')},
+        filename = function(){paste(mir.name, '.', target.name, '.', project, 
+                                    '.Correlation_Data.csv', sep = '')},
         
         content = function(file){
           write.csv(tcga.cor$cor.data, file, row.names = FALSE, quote = F)
         })
       
       output$tcga.cor.downbttn.png <- downloadHandler(
-        filename = function(){paste('cor.png', sep = '')},
+        filename = function(){paste(mir.name, '.', target.name, '.', project, 
+                                    '.Correlation_Plot.png', sep = '')},
         
         content = function(file){
           png(file, width = 500, height = 500)
@@ -770,7 +846,8 @@ server <- function(input, output, session) {
         })
       
       output$tcga.cor.downbttn.pdf <- downloadHandler(
-        filename = function(){paste('cor.pdf', sep = '')},
+        filename = function(){paste(mir.name, '.', target.name, '.', project, 
+                                    '.Correlation_Plot.pdf', sep = '')},
         
         content = function(file){
           pdf(file, width = 6, height = 5)
@@ -782,6 +859,10 @@ server <- function(input, output, session) {
       
       
       output$cor_heatmap <- renderPlotly({
+        
+        if (mir.id=='') {
+          return()
+        }
 
         req(tcga.cor$cor.plot)
         
@@ -853,281 +934,316 @@ server <- function(input, output, session) {
     })
     })
     
-
-    output$enrichment <- DT::renderDataTable({
+    
+    
+    observe({
       
       mir <- input$mir.id
-      geneset <- input$geneset.id
+      mir.name <- mir.annotation[mir, 'Name']
       
-      enrich.table <- enrichment.table[[geneset]][[mir]]
-      
-      if (nrow(enrich.table)==0) {
-        shinyjs::hide('enrichment_bar_plot')
-        shinyjs::hide('enrichment_bubble_plot')
-      } else {
-        shinyjs::show('enrichment_bar_plot')
-        shinyjs::show('enrichment_bubble_plot')
+      if (mir=='') {
+        return()
       }
       
-      if (nrow(enrich.table)>0) {
-        enrich.table$Count <- paste0(enrich.table$Count, '/', enrich.table$List.Total)
-        enrich.table$Pop.Hits <- paste0(enrich.table$Pop.Hits, '/', enrich.table$Pop.Total)
-      }
-      
-      enrich.table <- enrich.table[-c(4,6,7,10,11)]
-      colnames(enrich.table)[c(3,4)] <- c('Count/List.Total','Pop.Hits/Pop.Total')
-      
-      enrich.table
-      
-    }, 
-    callback=table.download.button,
-    options = list(pageLength = 5, dom = 'lfrtBp', buttons = c('copy', 'csv', 'excel')), #i
-    extensions = "Buttons",
-    selection = list(mode='none', selected=1), ### === not selectable
-    server = FALSE
-    )
-    
-    tcga.enrich <- reactiveValues()
-    
-    output$enrichment_bar_plot <- renderPlot({
+      signature.enrich <- reactive({
+        geneset <- input$geneset.id
+        
+        enrich.table <- enrichment.table[[geneset]][[mir]]
+        enrich.table
+      })
 
-      mir <- input$mir.id
+      
+      plotHeight.Enrich.Bubble <- reactive({
+        
+        dataForBarPlot <- signature.enrich()
+        
+        if (nrow(dataForBarPlot)>=30) {
+          500
+        } else if (nrow(dataForBarPlot)>=20 & nrow(dataForBarPlot)<30) {
+          nrow(dataForBarPlot)/30*500
+        } else {
+          20/30*500
+        }
+        
+      })
+      
+      plotHeight.Enrich.Bar <- reactive({
+        
+        dataForBarPlot <- signature.enrich()
+        
+        if (nrow(dataForBarPlot)>=26) {
+          500
+        } else {
+          nrow(dataForBarPlot)/30*500 + 90
+        }
+        
+      })
+      
+      
       geneset <- input$geneset.id
       
-      req(nrow(enrichment.table[[geneset]][[mir]])>0)
+      output$enrichment <- DT::renderDataTable({
+        
+        mir <- input$mir.id
+        
+        if (mir.id=='') {
+          return()
+        }
+        
+        geneset <- input$geneset.id
+        
+        enrich.table <- enrichment.table[[geneset]][[mir]]
+        
+        if (nrow(enrich.table)==0) {
+          shinyjs::hide('enrichment_bar_plot')
+          shinyjs::hide('enrichment_bubble_plot')
+        } else {
+          shinyjs::show('enrichment_bar_plot')
+          shinyjs::show('enrichment_bubble_plot')
+        }
+        
+        if (nrow(enrich.table)>0) {
+          enrich.table$Count <- paste0(enrich.table$Count, '/', enrich.table$List.Total)
+          enrich.table$Pop.Hits <- paste0(enrich.table$Pop.Hits, '/', enrich.table$Pop.Total)
+        }
+        
+        enrich.table <- enrich.table[-c(4,6,7,10,11)]
+        colnames(enrich.table)[c(3,4)] <- c('Count/List.Total','Pop.Hits/Pop.Total')
+        
+        enrich.table
+        
+      }, 
+      callback=table.download.button,
+      options = list(pageLength = 5, dom = 'lfrtBp', buttons = c('copy', 'csv', 'excel')), #i
+      extensions = "Buttons",
+      selection = list(mode='none', selected=1), ### === not selectable
+      server = FALSE
+      )
       
-      dataForBarPlot <- enrichment.table[[geneset]][[mir]]
-      dataForBarPlot$BH.Adj.P <- as.numeric(dataForBarPlot$BH.Adj.P)
-      dataForBarPlot$Count <- as.numeric(dataForBarPlot$Count)
-      dataForBarPlot$Fold.Enrichment <- as.numeric(dataForBarPlot$Fold.Enrichment)
+      tcga.enrich <- reactiveValues()
       
-      if (nrow(dataForBarPlot)>30) {
-        dataForBarPlot <- dataForBarPlot[1:30,]
-      }
+      output$enrichment_bar_plot <- renderPlot({
+        
+        mir <- input$mir.id
+        
+        if (mir.id=='') {
+          return()
+        }
+        
+        geneset <- input$geneset.id
+        
+        req(nrow(enrichment.table[[geneset]][[mir]])>0)
+        
+        dataForBarPlot <- enrichment.table[[geneset]][[mir]]
+        dataForBarPlot$BH.Adj.P <- as.numeric(dataForBarPlot$BH.Adj.P)
+        dataForBarPlot$Count <- as.numeric(dataForBarPlot$Count)
+        dataForBarPlot$Fold.Enrichment <- as.numeric(dataForBarPlot$Fold.Enrichment)
+        
+        if (nrow(dataForBarPlot)>30) {
+          dataForBarPlot <- dataForBarPlot[1:30,]
+        }
+        
+        p <- EnrichmentBarPlotFun(dataForBarPlot)
+        
+        tcga.enrich$enrich.bar.data <- dataForBarPlot
+        
+        tcga.enrich$enrich.bar.plot <- p
+        
+        p
+        
+      }, width = 800, height = plotHeight.Enrich.Bar())
       
-      p <- EnrichmentBarPlotFun(dataForBarPlot)
       
-      tcga.enrich$enrich.bar.data <- dataForBarPlot
+      output$enrich.bar.downbttn.csv <- downloadHandler(
+        filename = function(){paste(mir.name, '.miRTarBase200_Target.', geneset, '.Enrichment_Data.csv', sep = '')},
+        
+        content = function(file){
+          write.csv(tcga.enrich$enrich.bar.data, file, row.names = FALSE, quote = F)
+        })
       
-      tcga.enrich$enrich.bar.plot <- p
+      output$enrich.bar.downbttn.png <- downloadHandler(
+        filename = function(){paste(mir.name, '.miRTarBase200_Target.', geneset, '.Enrichment_BarPlot.png', sep = '')},
+        
+        content = function(file){
+          png(file, width = 800, height = plotHeight.Enrich.Bar())
+          print(tcga.enrich$enrich.bar.plot)
+          dev.off()
+        })
       
-      p
+      output$enrich.bar.downbttn.pdf <- downloadHandler(
+        filename = function(){paste(mir.name, '.miRTarBase200_Target.', geneset, '.Enrichment_BarPlot.pdf', sep = '')},
+        
+        content = function(file){
+          pdf(file, width = 10, height = plotHeight.Enrich.Bar()/76)
+          print(tcga.enrich$enrich.bar.plot)
+          dev.off()
+        })
+      
+      output$enrichment_bubble_plot <- renderPlot({
+        
+        mir <- input$mir.id
+        
+        if (mir.id=='') {
+          return()
+        }
+        
+        req(nrow(enrichment.table[[geneset]][[mir]])>0)
+        
+        dataForBubblePlot <- enrichment.table[[geneset]][[mir]]
+        dataForBubblePlot$BH.Adj.P <- as.numeric(dataForBubblePlot$BH.Adj.P)
+        dataForBubblePlot$Count <- as.numeric(dataForBubblePlot$Count)
+        dataForBubblePlot$Fold.Enrichment <- as.numeric(dataForBubblePlot$Fold.Enrichment)
+        
+        if (nrow(dataForBubblePlot)>30) {
+          dataForBubblePlot <- dataForBubblePlot[1:30,]
+        }
+        
+        p <- EnrichmentBubblePlotFun(dataForBubblePlot)
+        
+        tcga.enrich$enrich.bubble.data <- dataForBubblePlot
+        
+        tcga.enrich$enrich.bubble.plot <- p
+        
+        p
+        
+      }, width = 800, height = plotHeight.Enrich.Bubble())
+      
+      
+      output$enrich.bubble.downbttn.csv <- downloadHandler(
+        filename = function(){paste(mir.name, '.miRTarBase200_Target.', geneset, '.Enrichment_Data.csv', sep = '')},
+        
+        content = function(file){
+          write.csv(tcga.enrich$enrich.bubble.data, file, row.names = FALSE, quote = F)
+        })
+      
+      output$enrich.bubble.downbttn.png <- downloadHandler(
+        filename = function(){paste(mir.name, '.miRTarBase200_Target.', geneset, '.Enrichment_BubblePlot.png', sep = '')},
+        
+        content = function(file){
+          png(file, width = 1000, height = 700)
+          print(tcga.enrich$enrich.bubble.plot)
+          dev.off()
+        })
+      
+      output$enrich.bubble.downbttn.pdf <- downloadHandler(
+        filename = function(){paste(mir.name, '.miRTarBase200_Target.', geneset, '.Enrichment_BubblePlot.pdf', sep = '')},
+        
+        content = function(file){
+          pdf(file, width = 10, height = plotHeight.Enrich.Bubble()/76)
+          print(tcga.enrich$enrich.bubble.plot)
+          dev.off()
+        })
+      
       
     })
-    
-    
-    output$enrich.bar.downbttn.csv <- downloadHandler(
-      filename = function(){paste('enrich.bar.csv', sep = '')},
       
-      content = function(file){
-        write.csv(tcga.enrich$enrich.bar.data, file, row.names = FALSE, quote = F)
-      })
-    
-    output$enrich.bar.downbttn.png <- downloadHandler(
-      filename = function(){paste('enrich.bar.png', sep = '')},
-      
-      content = function(file){
-        png(file, width = 1000, height = 700)
-        print(tcga.enrich$enrich.bar.plot)
-        dev.off()
-      })
-    
-    output$enrich.bar.downbttn.pdf <- downloadHandler(
-      filename = function(){paste('enrich.bar.pdf', sep = '')},
-      
-      content = function(file){
-        pdf(file, width = 10, height = 7)
-        print(tcga.enrich$enrich.bar.plot)
-        dev.off()
-      })
-    
-    
-    output$enrichment_bubble_plot <- renderPlot({
-      
-      mir <- input$mir.id
-      geneset <- input$geneset.id
-      
-      req(nrow(enrichment.table[[geneset]][[mir]])>0)
-      
-      dataForBubblePlot <- enrichment.table[[geneset]][[mir]]
-      dataForBubblePlot$BH.Adj.P <- as.numeric(dataForBubblePlot$BH.Adj.P)
-      dataForBubblePlot$Count <- as.numeric(dataForBubblePlot$Count)
-      dataForBubblePlot$Fold.Enrichment <- as.numeric(dataForBubblePlot$Fold.Enrichment)
-      
-      if (nrow(dataForBubblePlot)>30) {
-        dataForBubblePlot <- dataForBubblePlot[1:30,]
-      }
-      
-      p <- EnrichmentBubblePlotFun(dataForBubblePlot)
-      
-      tcga.enrich$enrich.bubble.data <- dataForBubblePlot
-      
-      tcga.enrich$enrich.bubble.plot <- p
-      
-      p
-      
-    })
-    
-    
-    output$enrich.bubble.downbttn.csv <- downloadHandler(
-      filename = function(){paste('enrich.bubble.csv', sep = '')},
-      
-      content = function(file){
-        write.csv(tcga.enrich$enrich.bubble.data, file, row.names = FALSE, quote = F)
-      })
-    
-    output$enrich.bubble.downbttn.png <- downloadHandler(
-      filename = function(){paste('enrich.bubble.png', sep = '')},
-      
-      content = function(file){
-        png(file, width = 1000, height = 700)
-        print(tcga.enrich$enrich.bubble.plot)
-        dev.off()
-      })
-    
-    output$enrich.bubble.downbttn.pdf <- downloadHandler(
-      filename = function(){paste('enrich.bubble.pdf', sep = '')},
-      
-      content = function(file){
-        pdf(file, width = 10, height = 7)
-        print(tcga.enrich$enrich.bubble.plot)
-        dev.off()
-      })
-    
   })
   
-  
-  ########################################################################
-  ######################## GENE-LEVEL ANALYSIS ###########################
+
+  ###### Circulating miRNA expression
   
   output$browser_datasets <- DT::renderDataTable({ccma.primary},
-                                                 options = list(pageLength = 6), #8
-                                                 selection = list(mode='multiple', selected=c(3,6)) #,7,8
+                                                 options = list(pageLength = 5), #8
+                                                 selection = list(mode='single', selected=3) #,3,6 #multiple
   )
   
   observeEvent(input$mir.id, {
     req(mir.id)
     observeEvent(input$browser_datasets_rows_selected, {
       
-      plot_data <- reactive({
+      mir.id <- input$mir.id
+      mir.name <- mir.annotation[mir.id,]$Name
+      
+      idx <- input$browser_datasets_rows_selected
+      
+      if (idx=='' | mir.id=='') {
+        return()
+      }
+      
+      dataset <- as.character(ccma.datasets[idx,'Dataset'])
+      expr.ccma <- getCCMATable(dataset)
+      
+      group <- meta.ccma[[dataset]][,'Disease.Status']
+      expr <- as.numeric(expr.ccma[mir.id,])
+      sample <- ifelse(grepl('GSE', dataset), meta.ccma[[dataset]][,'Accession'],
+                            rownames(meta.ccma[[dataset]]))
+      
+      dataForViolinPlot <- data.frame(dataset, sample, group, expr,
+                                      stringsAsFactors = F)
+      
+      expr.med <- dataForViolinPlot %>% dplyr::group_by(group) %>% 
+        dplyr::summarise(med=median(expr, na.rm=T), N=length(expr))
+      
+      o <- order(expr.med$med, decreasing = T)
+      expr.med <- expr.med[o,]
+      
+      idx <- match(dataForViolinPlot$group, expr.med$group)
+      n <- expr.med$N[idx]
+      
+      expr.med$group <- paste0(expr.med$group, ' (N=', expr.med$N, ')')
+      dataForViolinPlot$group <- paste0(dataForViolinPlot$group, ' (N=', n, ')')
+      
+      if (sum(grepl('Healthy', expr.med$group))==1) {
+        idx <- grep('Healthy',expr.med$group)
+        group.levels <- c(expr.med$group[idx],expr.med$group[-idx])
+      } else {
+        group.levels <- expr.med$group
+      }
+      
+      dataForViolinPlot$group <- factor(dataForViolinPlot$group, levels=group.levels)
+      p <- CircViolinPlotFun(dataForViolinPlot)
+      
+      circ.expr <- reactiveValues()
+      circ.expr$data <- dataForViolinPlot
+      circ.expr$plot <- p
+      
+      if (length(unique(group))==1) {
+        plot.width <- reactive(300)
+      } else if (length(unique(group))>1 & length(unique(group))<=3){
+        plot.width <- reactive(400)
+      } else if (length(unique(group))>3 & length(unique(group))<=5){
+        plot.width <- reactive(500)
+      } else if (length(unique(group))>5 & length(unique(group))<10){
+        plot.width <- reactive(800)
+      } else if (length(unique(group))>=10){
+        plot.width <- reactive(900)
+      } else {
+        plot.width <- reactive(100 * length(unique(group)))
+      }
+      
+      if (dataset %in% c('GSE122497','GSE124158-GPL21263','GSE139031','GSE139031','GSE85589',
+                         'GSE68951','GSE118613','GSE59856','GSE112840','GSE124158-GPL18941',
+                         'GSE113956')) {
+        plot.height <- reactive(600)
+      } else if (dataset %in% c('GSE106817','GSE112264','GSE113486','GSE85679','GSE110651','GSE85677',
+                                'GSE55993','GSE134266','GSE93850','GSE139164')){
+        plot.height <- reactive(550)
+      } else {
+        plot.height <- reactive(500)
+      }
+      
+      output$circ_expr_violin_plot <- renderPlot({
         
-        mir.id <- input$mir.id
+        circ.expr$plot
         
-        idx <- sort(input$browser_datasets_rows_selected)
-        datasets <- as.character(ccma.datasets[idx,'Dataset'])
-        
-        expr.ccma <- list()
-        
-        for (dt in datasets) {
-          expr.ccma[[dt]] <- getCCMATable(dt)
-        }
-        
-        lapply(datasets, function(dataset) 
-        {group <- meta.ccma[[dataset]][,'Disease.Status']
-        expr <- expr.ccma[[dataset]][mir.id,]
-        expr <- as.numeric(expr)
-        
-        dataForViolinPlot <- data.frame(expr, group, dataset,
-                                        stringsAsFactors = F)
-        
-        expr.med <- dataForViolinPlot %>% dplyr::group_by(group) %>% 
-          dplyr::summarise(med=median(expr, na.rm=T), N=length(expr))
-        
-        o <- order(expr.med$med, decreasing = T)
-        expr.med <- expr.med[o,]
-        
-        idx <- match(dataForViolinPlot$group, expr.med$group)
-        n <- expr.med$N[idx]
-        
-        expr.med$group <- paste0(expr.med$group, ' (N=', expr.med$N, ')')
-        dataForViolinPlot$group <- paste0(dataForViolinPlot$group, ' (N=', n, ')')
-        
-        if (sum(grepl('Healthy', expr.med$group))==1) {
-          idx <- grep('Healthy',expr.med$group)
-          group.levels <- c(expr.med$group[idx],expr.med$group[-idx])
-        } else {
-          group.levels <- expr.med$group
-        }
-        
-        dataForViolinPlot$group <- factor(dataForViolinPlot$group, levels=group.levels)
-        
-        return (dataForViolinPlot)
-        }
-        )
-        
-      })
+      }, width = plot.width(), height = plot.height())
       
       
-      # output$circ_violin_plot <- renderUI({
-      #   
-      #   idx <- sort(input$browser_datasets_rows_selected)
-      #   datasets <- as.character(ccma.datasets[idx,'Dataset'])
-      #   
-      #   group <- meta.ccma[[dataset]][,'Disease.Status']
-      #   
-      #   
-      #   
-      #   if (length(unique(group))<=5) {
-      #     plot.width <- reactive(500)
-      #   } else if (length(unique(group))>5 & length(unique(group))<10){
-      #     plot.width <- reactive(800)
-      #   } else if (length(unique(group))>=10){
-      #     plot.width <- reactive(1000)
-      #   } else {
-      #     plot.width <- reactive(100 * length(unique(group)))
-      #   }
-      #   return (plot.width)
-      #   
-      #   })
-      #   
-      #   
-      #   lapply(seq_along(input$browser_datasets_rows_selected),
-      #          function(n) {
-      #            return(plot_overlay_ui(paste0("n", n), height=500, width=plot.widths[[n]]()))
-      #          })
-      #   
-      #   
-      #   
-      # })
-      
-      
-      
-      output$multi_plot_ui <- renderUI({
-
-        idx <- sort(input$browser_datasets_rows_selected)
-        datasets <- as.character(ccma.datasets[idx,'Dataset'])
-
-        plot.widths <- lapply(datasets, function(dataset)
-        {group <- meta.ccma[[dataset]][,'Disease.Status']
-
-        if (length(unique(group))<=5) {
-          plot.width <- reactive(500)
-        } else if (length(unique(group))>5 & length(unique(group))<10){
-          plot.width <- reactive(800)
-        } else if (length(unique(group))>=10){
-          plot.width <- reactive(1000)
-        } else {
-          plot.width <- reactive(100 * length(unique(group)))
-        }
-        return (plot.width)
-
+      output$circ.expr.downbttn.csv <- downloadHandler(
+        filename = function(){paste(mir.name, '.', dataset, '.Circulating_miRNA_Expression_Data.csv', sep = '')},
+        
+        content = function(file){
+          write.csv(circ.expr$data, file, row.names = FALSE, quote = F)
         })
-
-
-        lapply(seq_along(input$browser_datasets_rows_selected),
-               function(n) {
-                 return(plot_overlay_ui(paste0("n", n), height=500, width=plot.widths[[n]]()))
-               })
-      })
-
-      lapply(seq_along(input$browser_datasets_rows_selected),
-             function(i){
-               callModule(plot_overlay_server,
-                          paste0("n", i),
-                          dataForViolinPlot = plot_data()[[i]])
-             }
-      )
       
+      output$circ.expr.downbttn.pdf <- downloadHandler(
+        filename = function(){paste(mir.name, '.', dataset, '.Circulating_miRNA_Expression_ViolinPlot.pdf', sep = '')},
+        
+        content = function(file){
+          pdf(file, width = plot.width()/72, height = plot.height()/72)
+          print(circ.expr$plot)
+          dev.off()
+        })
       
     })
     
@@ -1352,14 +1468,14 @@ server <- function(input, output, session) {
     })
     
     output$high.expr.tcga.downbttn.csv <- downloadHandler(
-      filename = function(){paste('barplot.csv', sep = '')},
+      filename = function(){paste(project, '.Top50_Highly_Expressed_miRNAs_Data.csv', sep = '')},
       
       content = function(file){
         write.csv(high.expr.tcga$bar.data, file, row.names = FALSE, quote = F)
       })
     
     output$high.expr.tcga.downbttn.png <- downloadHandler(
-      filename = function(){paste('barplot.png', sep = '')},
+      filename = function(){paste(project, '.Top50_Highly_Expressed_miRNAs_BarPlot.png', sep = '')},
       
       content = function(file){
         png(file, width = 1200, height = 500)
@@ -1368,10 +1484,10 @@ server <- function(input, output, session) {
       })
     
     output$high.expr.tcga.downbttn.pdf <- downloadHandler(
-      filename = function(){paste('barplot.pdf', sep = '')},
+      filename = function(){paste(project, '.Top50_Highly_Expressed_miRNAs_BarPlot.pdf', sep = '')},
       
       content = function(file){
-        pdf(file, width = 12, height = 5)
+        pdf(file, width = 13.5, height = 5.5)
         print(high.expr.tcga$bar.plot)
         dev.off()
       })
@@ -1543,12 +1659,12 @@ server <- function(input, output, session) {
         shinyjs::show('volcano.tcga.downbttn.pdf')
         
         tcga.volcano <- reactiveValues()
-        
+        tcga.volcano$volcano.data <- dataForVolcanoPlot
+
         output$volcano_sample_type_tcga <- renderPlot({
           
           p <- volcanoPlotFun(dataForVolcanoPlot, logFcThreshold, adjPvalThreshold)
           
-          tcga.volcano$volcano.data <- dataForVolcanoPlot
           tcga.volcano$volcano.plot <- p
           
           p
@@ -1556,14 +1672,16 @@ server <- function(input, output, session) {
         })
         
         output$volcano.tcga.downbttn.csv <- downloadHandler(
-          filename = function(){paste('volcano.csv', sep = '')},
-          
+          filename = function(){paste(project, '.', meta.name, '.DE_Analysis_Table.csv', sep = '')},
+
           content = function(file){
-            write.csv(tcga.volcano$volcano.data, row.names = FALSE, quote = F)
+            write.csv(tcga.volcano$volcano.data, file, row.names = FALSE, quote = F)
           })
         
+        
+        
         output$volcano.tcga.downbttn.png <- downloadHandler(
-          filename = function(){paste('volcano.png', sep = '')},
+          filename = function(){paste(project, '.', meta.name, '.DE_Analysis_VolcanoPlot.png', sep = '')},
           
           content = function(file){
             png(file, width = 600, height = 600)
@@ -1572,7 +1690,7 @@ server <- function(input, output, session) {
           })
         
         output$volcano.tcga.downbttn.pdf <- downloadHandler(
-          filename = function(){paste('volcano.pdf', sep = '')},
+          filename = function(){paste(project, '.', meta.name, '.DE_Analysis_VolcanoPlot.pdf', sep = '')},
           
           content = function(file){
             pdf(file, width = 6, height = 6)
@@ -1730,7 +1848,13 @@ server <- function(input, output, session) {
     
     output$table_km_tcga <- DT::renderDataTable({
       
-      km.tcga[[project]]
+      dt <- km.tcga[[project]]
+      
+      dt[,3:6] <- apply(dt[,3:6], 2, 
+                        function(v) ifelse(v>=0.01, format(round(v,3), nsmall = 3),
+                                           format(v, scientific=T, digits = 3)))
+      
+      dt
       
     },
     callback=table.download.button,
@@ -1743,7 +1867,13 @@ server <- function(input, output, session) {
     
     output$table_coxph_tcga <- DT::renderDataTable({
       
-      coxph.tcga[[project]]
+      dt <- coxph.tcga[[project]]
+      
+      dt[,3:6] <- apply(dt[,3:6], 2, 
+                        function(v) ifelse(v>=0.01, format(round(v,3), nsmall = 3),
+                                           format(v, scientific=T, digits = 3)))
+      
+      dt
       
     },
     callback=table.download.button,
@@ -1799,14 +1929,14 @@ server <- function(input, output, session) {
     })
     
     output$risk.tcga.downbttn.csv <- downloadHandler(
-      filename = function(){paste('km.risk.csv', sep = '')},
+      filename = function(){paste(project, '.Prognostic_Model_Traning_Survival_Data.csv', sep = '')},
       
       content = function(file){
         write.csv(tcga.risk$risk.data, file, row.names = FALSE, quote = F)
       })
     
     output$risk.tcga.downbttn.png <- downloadHandler(
-      filename = function(){paste('km.risk.png', sep = '')},
+      filename = function(){paste(project, '.Prognostic_Model_Traning_KM_Survival_Curve.png', sep = '')},
       
       content = function(file){
         png(file, width = 600, height = 600)
@@ -1815,7 +1945,7 @@ server <- function(input, output, session) {
       })
     
     output$risk.tcga.downbttn.pdf <- downloadHandler(
-      filename = function(){paste('km.risk.pdf', sep = '')},
+      filename = function(){paste(project, '.Prognostic_Model_Traning_KM_Survival_Curve.pdf', sep = '')},
       
       content = function(file){
         pdf(file, width = 6, height = 6)
@@ -1835,14 +1965,14 @@ server <- function(input, output, session) {
     })
     
     output$surv.roc.downbttn.csv <- downloadHandler(
-      filename = function(){paste('roc.risk.csv', sep = '')},
+      filename = function(){paste(project, '.Prognostic_Model_Traning_Survival_Data.csv', sep = '')},
 
       content = function(file){
         write.csv(tcga.risk$risk.data, file, row.names = FALSE, quote = F)
       })
     
     output$surv.roc.downbttn.png <- downloadHandler(
-      filename = function(){paste('roc.risk.png', sep = '')},
+      filename = function(){paste(project, '.Prognostic_Model_Traning_Time_Dependent_AUC.png', sep = '')},
       
       content = function(file){
         png(file, width = 600, height = 600)
@@ -1851,7 +1981,7 @@ server <- function(input, output, session) {
       })
     
     output$surv.roc.downbttn.pdf <- downloadHandler(
-      filename = function(){paste('roc.risk.pdf', sep = '')},
+      filename = function(){paste(project, '.Prognostic_Model_Traning_Time_Dependent_AUC.pdf', sep = '')},
       
       content = function(file){
         pdf(file, width = 6, height = 6)
@@ -2048,12 +2178,26 @@ server <- function(input, output, session) {
       dataset_summary
     })
     
-    
     output$gse <- renderUI({
       link <- as.character(ccma.datasets[idx,'Links'])
       tags$iframe(src=link, seamless="seamless", width='100%', height='600')
     })
     
+    output$circulating_text_summary_accession <- renderText({
+      ccma.datasets[idx,'Dataset']
+    })
+    
+    output$circulating_text_summary_platform <- renderText({
+      ccma.datasets[idx,'Platform']
+    })
+    
+    output$circulating_text_summary_cancer_type <- renderText({
+      ccma.datasets[idx,'Disease']
+    })
+    
+    output$circulating_text_summary_pipeline <- renderText({
+      ccma.datasets[idx,'Platform']
+    })
     
     output$pie_disease_status <- renderPlotly({
       sample.freq <- table(meta$Disease.Status)
@@ -2104,14 +2248,14 @@ server <- function(input, output, session) {
     })
     
     output$high.expr.ccma.downbttn.csv <- downloadHandler(
-      filename = function(){paste('barplot.csv', sep = '')},
+      filename = function(){paste(dataset, '.Top50_Highly_Expressed_miRNAs_Data.csv', sep = '')},
       
       content = function(file){
         write.csv(high.expr.ccma$bar.data, file, row.names = FALSE, quote = F)
       })
     
     output$high.expr.ccma.downbttn.png <- downloadHandler(
-      filename = function(){paste('barplot.png', sep = '')},
+      filename = function(){paste(dataset, '.Top50_Highly_Expressed_miRNAs_BarPlot.png', sep = '')},
       
       content = function(file){
         png(file, width = 1200, height = 500)
@@ -2120,10 +2264,10 @@ server <- function(input, output, session) {
       })
     
     output$high.expr.ccma.downbttn.pdf <- downloadHandler(
-      filename = function(){paste('barplot.pdf', sep = '')},
+      filename = function(){paste(dataset, '.Top50_Highly_Expressed_miRNAs_BarPlot.pdf', sep = '')},
       
       content = function(file){
-        pdf(file, width = 12, height = 5)
+        pdf(file, width = 13.5, height = 5.5)
         print(high.expr.ccma$bar.plot)
         dev.off()
       })
@@ -2212,14 +2356,14 @@ server <- function(input, output, session) {
       })
       
       output$volcano.ccma.downbttn.csv <- downloadHandler(
-        filename = function(){paste('volcano.csv', sep = '')},
+        filename = function(){paste(dataset, '.DE_Analysis_Table.csv', sep = '')},
         
         content = function(file){
-          write.csv(ccma.volcano$volcano.data, row.names = FALSE, quote = F)
+          write.csv(ccma.volcano$volcano.data, file, row.names = FALSE, quote = F)
         })
       
       output$volcano.ccma.downbttn.png <- downloadHandler(
-        filename = function(){paste('volcano.png', sep = '')},
+        filename = function(){paste(dataset, '.DE_Analysis_VolcanoPlot.png', sep = '')},
         
         content = function(file){
           png(file, width = 600, height = 600)
@@ -2228,7 +2372,7 @@ server <- function(input, output, session) {
         })
       
       output$volcano.ccma.downbttn.pdf <- downloadHandler(
-        filename = function(){paste('volcano.pdf', sep = '')},
+        filename = function(){paste(dataset, '.DE_Analysis_VolcanoPlot.pdf', sep = '')},
         
         content = function(file){
           pdf(file, width = 6, height = 6)
