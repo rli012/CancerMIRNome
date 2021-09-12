@@ -35,6 +35,9 @@
 
 ### TCGA Datasets
 tcga.datasets <- readRDS('data/TCGA_Projects.RDS')
+idx <- which(tcga.datasets$Project=='TCGA-GBM')
+tcga.datasets <- tcga.datasets[-idx,]
+
 
 projects.tcga <- c("TCGA-ACC","TCGA-BLCA","TCGA-BRCA","TCGA-CESC",
                    "TCGA-CHOL","TCGA-COAD","TCGA-DLBC","TCGA-ESCA",#"TCGA-GBM",
@@ -62,7 +65,6 @@ ccma.primary <- ccma.primary[,c(1:3,5)]
 meta.tcga <- readRDS('data/Metadata_TCGA.RDS')
 mir.tcga <- readRDS('data/miRNA_Expression_TCGA.RDS')
 #rna.tcga <- readRDS('data/RNAseq_Expression_TCGA.miRTarBase.RDS')
-
 
 ### TCGA Data Analysis
 expr.high.tcga <- readRDS(file='data/Highly.Expressed.miRNAs.TCGA.RDS')
@@ -97,3 +99,19 @@ expr.high.ccma <- readRDS(file='data/Highly.Expressed.miRNAs.CCMA.RDS')
 meta.ccma <- readRDS('data/miRNomes_Metadata.RDS')
 
 pca.ccma <- readRDS(file='data/PCA.Analysis.CCMA.RDS')
+
+
+
+
+###
+# meta.tcga <- readRDS('~/Documents/Publications/CancerMIRNomeAWS/data/Metadata_TCGA.RDS')
+# meta <- do.call(rbind, meta.tcga)
+# 
+# sum(unlist(lapply(meta.tcga, nrow)))
+# 
+# length(meta.tcga)
+# o <- order(names(meta.tcga))
+# unlist(lapply(meta.tcga, nrow))[o]
+# 
+# saveRDS(meta, file='~/Documents/Publications/CancerMIRNomeAWS/data/Integrated_Sample_Metadata_TCGA.RDS')
+

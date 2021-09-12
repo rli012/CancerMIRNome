@@ -31,76 +31,82 @@ library(slickR)
 
 library(dashboardthemes)
 library(shinythemes)
+library(shinyalert)
 
 source('script/shiny_functions.R')
+
+google.red <- '#ea4235'
+google.yellow <- '#fabd03'
+google.green <- '#34a853'
+google.blue <- '#4286f5'
 
 
 ################################## Data #####################################
 
-### TCGA Datasets
-tcga.datasets <- readRDS('data/TCGA_Projects.RDS')
-
-projects.tcga <- c("TCGA-ACC","TCGA-BLCA","TCGA-BRCA","TCGA-CESC",
-                   "TCGA-CHOL","TCGA-COAD","TCGA-DLBC","TCGA-ESCA",#"TCGA-GBM",
-                   "TCGA-HNSC","TCGA-KICH","TCGA-KIRC","TCGA-KIRP",
-                   "TCGA-LAML","TCGA-LGG","TCGA-LIHC","TCGA-LUAD",
-                   "TCGA-LUSC","TCGA-MESO","TCGA-OV","TCGA-PAAD",
-                   "TCGA-PCPG","TCGA-PRAD","TCGA-READ","TCGA-SARC",
-                   "TCGA-SKCM","TCGA-STAD","TCGA-TGCT","TCGA-THCA",
-                   "TCGA-THYM","TCGA-UCEC","TCGA-UCS","TCGA-UVM")
-
-projects.tcga.sub <- c("TCGA-BLCA","TCGA-BRCA","TCGA-CESC","TCGA-CHOL",
-                       "TCGA-COAD","TCGA-ESCA","TCGA-HNSC","TCGA-KICH",
-                       "TCGA-KIRC","TCGA-KIRP","TCGA-LIHC","TCGA-LUAD",
-                       "TCGA-LUSC","TCGA-PAAD","TCGA-PCPG","TCGA-PRAD",
-                       "TCGA-READ","TCGA-SKCM","TCGA-STAD","TCGA-THCA",
-                       "TCGA-THYM","TCGA-UCEC")
-
-### CCMA Datasets
-ccma.datasets <- readRDS('data/miRNomes_Datasets.RDS')
-ccma.datasets$Name <- paste0(ccma.datasets$Dataset, ': ', ccma.datasets$Title)
-ccma.primary <- readRDS('data/miRNomes_Datasets_Primary.RDS')
-ccma.primary <- ccma.primary[,c(1:3,5)]
-
-### TCGA Data
-meta.tcga <- readRDS('data/Metadata_TCGA.RDS')
-mir.tcga <- readRDS('data/miRNA_Expression_TCGA.RDS')
-#rna.tcga <- readRDS('data/RNAseq_Expression_TCGA.miRTarBase.RDS')
-
-
-### TCGA Data Analysis
-expr.high.tcga <- readRDS(file='data/Highly.Expressed.miRNAs.TCGA.RDS')
-
-km.tcga <- readRDS('data/Survival.KM.TCGA.RDS')
-coxph.tcga <- readRDS('data/Survival.CoxPH.TCGA.RDS')
-
-lasso.tcga <- readRDS('data/Survival.Lasso.Feature.TCGA.RDS')
-lasso.plot.tcga <- readRDS('data/Survival.Lasso.Plot.TCGA.RDS')
-
-#risk.km.plot.tcga <- readRDS(file='data/Survival.KM.Risk.Plot.TCGA.RDS')
-risk.km.data.tcga <- readRDS(file='data/Survival.KM.Risk.Data.TCGA.RDS')
-
-tcga.feature.table <- readRDS('data/Lasso.Feature.Table.RDS')
-tcga.feature.plot <- readRDS('data/Lasso.Feature.Plot.RDS')
-
-roc.tcga <- readRDS('data/ROC.Analysis.TCGA.RDS')
-surv.roc.plot.tcga <- readRDS(file='data/Survival.ROC.Risk.Plot.TCGA.RDS')
-
-pca.tcga <- readRDS(file='data/PCA.Analysis.TCGA.RDS')
-
-### Correlation/Functional Analysis
-#cor.table <- readRDS('data/Correlation.miRTarBase.RDS')
-enrichment.table <- readRDS('data/Enrichment.miRTarBase.RDS')
-
-
-
-### CCMA Data Analysis
-expr.high.ccma <- readRDS(file='data/Highly.Expressed.miRNAs.CCMA.RDS')
-
-#expr.ccma <- readRDS('data/miRNomes_Expression.RDS')
-meta.ccma <- readRDS('data/miRNomes_Metadata.RDS')
-
-pca.ccma <- readRDS(file='data/PCA.Analysis.CCMA.RDS')
+# ### TCGA Datasets
+# tcga.datasets <- readRDS('data/TCGA_Projects.RDS')
+# 
+# projects.tcga <- c("TCGA-ACC","TCGA-BLCA","TCGA-BRCA","TCGA-CESC",
+#                    "TCGA-CHOL","TCGA-COAD","TCGA-DLBC","TCGA-ESCA",#"TCGA-GBM",
+#                    "TCGA-HNSC","TCGA-KICH","TCGA-KIRC","TCGA-KIRP",
+#                    "TCGA-LAML","TCGA-LGG","TCGA-LIHC","TCGA-LUAD",
+#                    "TCGA-LUSC","TCGA-MESO","TCGA-OV","TCGA-PAAD",
+#                    "TCGA-PCPG","TCGA-PRAD","TCGA-READ","TCGA-SARC",
+#                    "TCGA-SKCM","TCGA-STAD","TCGA-TGCT","TCGA-THCA",
+#                    "TCGA-THYM","TCGA-UCEC","TCGA-UCS","TCGA-UVM")
+# 
+# projects.tcga.sub <- c("TCGA-BLCA","TCGA-BRCA","TCGA-CESC","TCGA-CHOL",
+#                        "TCGA-COAD","TCGA-ESCA","TCGA-HNSC","TCGA-KICH",
+#                        "TCGA-KIRC","TCGA-KIRP","TCGA-LIHC","TCGA-LUAD",
+#                        "TCGA-LUSC","TCGA-PAAD","TCGA-PCPG","TCGA-PRAD",
+#                        "TCGA-READ","TCGA-SKCM","TCGA-STAD","TCGA-THCA",
+#                        "TCGA-THYM","TCGA-UCEC")
+# 
+# ### CCMA Datasets
+# ccma.datasets <- readRDS('data/miRNomes_Datasets.RDS')
+# ccma.datasets$Name <- paste0(ccma.datasets$Dataset, ': ', ccma.datasets$Title)
+# ccma.primary <- readRDS('data/miRNomes_Datasets_Primary.RDS')
+# ccma.primary <- ccma.primary[,c(1:3,5)]
+# 
+# ### TCGA Data
+# meta.tcga <- readRDS('data/Metadata_TCGA.RDS')
+# mir.tcga <- readRDS('data/miRNA_Expression_TCGA.RDS')
+# #rna.tcga <- readRDS('data/RNAseq_Expression_TCGA.miRTarBase.RDS')
+# 
+# 
+# ### TCGA Data Analysis
+# expr.high.tcga <- readRDS(file='data/Highly.Expressed.miRNAs.TCGA.RDS')
+# 
+# km.tcga <- readRDS('data/Survival.KM.TCGA.RDS')
+# coxph.tcga <- readRDS('data/Survival.CoxPH.TCGA.RDS')
+# 
+# lasso.tcga <- readRDS('data/Survival.Lasso.Feature.TCGA.RDS')
+# lasso.plot.tcga <- readRDS('data/Survival.Lasso.Plot.TCGA.RDS')
+# 
+# #risk.km.plot.tcga <- readRDS(file='data/Survival.KM.Risk.Plot.TCGA.RDS')
+# risk.km.data.tcga <- readRDS(file='data/Survival.KM.Risk.Data.TCGA.RDS')
+# 
+# tcga.feature.table <- readRDS('data/Lasso.Feature.Table.RDS')
+# tcga.feature.plot <- readRDS('data/Lasso.Feature.Plot.RDS')
+# 
+# roc.tcga <- readRDS('data/ROC.Analysis.TCGA.RDS')
+# surv.roc.plot.tcga <- readRDS(file='data/Survival.ROC.Risk.Plot.TCGA.RDS')
+# 
+# pca.tcga <- readRDS(file='data/PCA.Analysis.TCGA.RDS')
+# 
+# ### Correlation/Functional Analysis
+# #cor.table <- readRDS('data/Correlation.miRTarBase.RDS')
+# enrichment.table <- readRDS('data/Enrichment.miRTarBase.RDS')
+# 
+# 
+# 
+# ### CCMA Data Analysis
+# expr.high.ccma <- readRDS(file='data/Highly.Expressed.miRNAs.CCMA.RDS')
+# 
+# #expr.ccma <- readRDS('data/miRNomes_Expression.RDS')
+# meta.ccma <- readRDS('data/miRNomes_Metadata.RDS')
+# 
+# pca.ccma <- readRDS(file='data/PCA.Analysis.CCMA.RDS')
 
 
 ################################## Input #####################################
@@ -111,7 +117,7 @@ mir.default <- 'MIMAT0000062' # hsa-let-7a-5p
 mir.annotation <- readRDS('data/miRBase_10.0_22.RDS')
 
 mir.id <- selectizeInput(inputId = "mir.id", label=h4(strong('Search a miRNA')), #list(h4('Search a miRNA:'), icon('search', 'fa-1.5x')),# h4(strong('miRNA'))
-                         choices = NULL, selected = mir.default, #mir.default, 
+                         choices = NULL, selected = mir.default, #mir.default,
                          multiple = FALSE, width = 400,
                          options = list(placeholder = 'e.g. hsa-miR-7a-5p', #  or MIMAT0000062
                                         server = TRUE, selectOnTab=TRUE,
@@ -119,7 +125,7 @@ mir.id <- selectizeInput(inputId = "mir.id", label=h4(strong('Search a miRNA')),
                                         labelField = "Name",
                                         valueField = "ID",
                                         #maxOptions = 5,
-                                        render = I("{option: function(item, escape) 
+                                        render = I("{option: function(item, escape)
                                                    {var gene = '<div>' + '<strong>' + escape(item.Name) + '</strong>' + '<ul>';
                                                    gene = gene + '<li>' + 'Previous IDs: ' + item.Previous_ID + '</li>';
                                                    gene = gene + '<li>' + 'Accession: ' + item.ID + '</li>' + '</ul>' + '</div>';
@@ -132,17 +138,17 @@ mir.id <- selectizeInput(inputId = "mir.id", label=h4(strong('Search a miRNA')),
 circulating.expression.default <- 'GSE106817' # hsa-let-7a-5p
 #mir.annotation <- readRDS('data/miRBase_10.0_22.RDS')
 
-circulating.expression.id <- selectizeInput(inputId = "circulating.expression.id", 
+circulating.expression.id <- selectizeInput(inputId = "circulating.expression.id",
                                             label=h4(strong('Select a dataset')), #list(h4('Search a miRNA:'), icon('search', 'fa-1.5x')),# h4(strong('miRNA'))
-                                            choices = NULL, selected = circulating.expression.default, #mir.default, 
+                                            choices = NULL, selected = circulating.expression.default, #mir.default,
                                             multiple = FALSE, width = 600,
-                                            options = list(placeholder = 'e.g. GSE106817', 
+                                            options = list(placeholder = 'e.g. GSE106817',
                                                            server = TRUE, selectOnTab=TRUE,
                                                            searchField = c('Name', 'Disease'),
                                                            labelField = "Name",
                                                            valueField = "Dataset",
                                                            #maxOptions = 5,
-                                                           render = I("{option: function(item, escape) 
+                                                           render = I("{option: function(item, escape)
                                                    {var gene = '<div>' + '<strong>' + escape(item.Name) + '</strong>' + '<ul>';
                                                    gene = gene + '<li>' + 'Sample types: ' + item.Disease + '</li>' + '</ul>' + '</div>';
                                                    return gene
@@ -157,14 +163,14 @@ circulating.expression.id <- selectizeInput(inputId = "circulating.expression.id
 project.default <- 'TCGA-BLCA'
 
 project.id <- selectizeInput(inputId = "project.id", label=h5(strong('TCGA Project:')),# h4(strong('miRNA'))
-                             choices = NULL, selected = project.default, 
+                             choices = NULL, selected = project.default,
                              multiple = FALSE, width = 150,
                              options = list(placeholder = 'Select a project',
                                             server = TRUE, selectOnTab=TRUE
                              ))
 
 project.id.cor <- selectizeInput(inputId = "project.id.cor", label=h5(strong('TCGA Project:')),# h4(strong('miRNA'))
-                                 choices = NULL, selected = project.default, 
+                                 choices = NULL, selected = project.default,
                                  multiple = FALSE, width = 150,
                                  options = list(placeholder = 'Select a project',
                                                 server = TRUE, selectOnTab=TRUE
@@ -176,7 +182,7 @@ gene.sets <- c('Kyoto Encyclopedia of Genes and Genomes (KEGG)' = 'KEGG',
                'REACTOME' = 'REACTOME',
                'Disease Ontology (DO)' = 'DO',
                'Network of Cancer Gene (NCG)' = 'NCG',
-               'DisGeNET' = 'DGN', 
+               'DisGeNET' = 'DGN',
                'Gene Ontology - Biological Process (GO-BP)' = 'GOBP',
                'Gene Ontology - Cellular Component (GO-CC)' = 'GOCC',
                'Gene Ontology - Molecular Function (GO-MF)' = 'GOMF',
@@ -189,11 +195,28 @@ gene.sets <- c('Kyoto Encyclopedia of Genes and Genomes (KEGG)' = 'KEGG',
 
 geneset.id.default <- gene.sets[1]
 geneset.id <- selectizeInput(inputId = "geneset.id", label=h5(strong('Gene Sets:')),# h4(strong('miRNA'))
-                             choices = NULL, selected = geneset.id.default, 
+                             choices = NULL, selected = geneset.id.default,
                              multiple = FALSE, width = 410,
                              options = list(placeholder = 'Select a gene set',
                                             server = TRUE, selectOnTab=TRUE
                              ))
+
+
+## Survival
+
+survival.analysis <- c('Univariate Survival Analysis' = 'Univariate',
+                       'Pre-built Prognostic Model' = 'Pre-built',
+                       'User-provided Prognostic Signature' = 'User-provided'
+                       )
+
+survival.analysis.default <- survival.analysis[1]
+survival_analysis_input <- selectizeInput(inputId = "survival_analysis_input", label=h5(strong('Survival Analysis Modules:')),# h4(strong('miRNA'))
+                                          choices = NULL, selected = survival.analysis.default,
+                                          multiple = FALSE, width = 310,
+                                          options = list(placeholder = NULL,
+                                                         server = TRUE, selectOnTab=TRUE
+                                          ))
+
 #$("button.buttons-copy").css("border","grey");
 # table.download.button <- JS('$("button.buttons-copy").css("background","white");
 #                  $("button.buttons-copy").css("width",40);
@@ -223,12 +246,21 @@ table.download.button <- JS('$("button.buttons-copy").css("font-size",12);
 
 server <- function(input, output, session) { 
   
+  output$slick_output <- renderSlickR({
+    
+    imgs <- c('img/figure1.jpg','img/figure2.jpg','img/figure3.jpg')
+    slickR(imgs, height = 500, width='100%') + settings(dots = TRUE, autoplay = TRUE, autoplaySpeed = 3000)
+    
+  })
+  
   updateSelectizeInput(session, 'mir.id', choices = mir.annotation, selected = mir.default, server = TRUE)
   updateSelectizeInput(session, 'circulating.expression.id', choices = ccma.datasets, selected = circulating.expression.default, server = TRUE)
   
   updateSelectizeInput(session, 'project.id', choices = projects.tcga, selected = project.default, server = TRUE)
   updateSelectizeInput(session, 'project.id.cor', choices = projects.tcga, selected = project.default, server = TRUE)
   updateSelectizeInput(session, 'geneset.id', choices = gene.sets, selected = geneset.id.default, server = TRUE)
+  updateSelectizeInput(session, 'survival_analysis_input', choices = survival.analysis, selected = survival.analysis.default, server = TRUE)
+  
   
   seed <- reactiveVal()
   
@@ -239,28 +271,18 @@ server <- function(input, output, session) {
   # })
   
   
-  output$slick_output <- renderSlickR({
-    
-    imgs <- c('img/figure1.jpg','img/figure2.jpg','img/figure3.jpg')
-    slickR(imgs, height = 500, width='100%') + settings(dots = TRUE, autoplay = TRUE, autoplaySpeed = 3000)
-    
-  })
-  
-  
-  
-  
   ################################################################
   ######################## Information ###########################
   
   observeEvent(input$mir.id, {
     
-    req(input$mir.id)
+    #req(input$mir.id)
     
     output$mir.name <- renderUI({ 
       mir.id <- input$mir.id
       mir.name <- mir.annotation[mir.id, 'Name']
       mir.url <- paste0('http://www.mirbase.org/cgi-bin/mature.pl?mature_acc=', mir.id)
-      mir.url <- a(mir.name, href = mir.url, target="_blank", style = "font-size:150%; color:#3b8dbc; font-family:Georgia") # #fabd03
+      mir.url <- a(mir.name, href = mir.url, target="_blank", style = "font-size:150%; color:#21ADA8; font-family:Georgia") # #fabd03
       
       if (is.na(mir.name)) {
         return('')
@@ -333,7 +355,7 @@ server <- function(input, output, session) {
   
   observeEvent(input$mir.id, {
     
-    req(input$mir.id)
+    #req(input$mir.id)
     
     mir.id <- input$mir.id
     mir.name <- mir.annotation[mir.id, 'Name']
@@ -360,7 +382,7 @@ server <- function(input, output, session) {
       tcga.overview$box.plot <- p
       
       p
-    })
+    }, height = 400)
     
     
     output$tcga.box.summ.downbttn.csv <- downloadHandler(
@@ -463,7 +485,7 @@ server <- function(input, output, session) {
       tcga.overview$roc.forest.plot <- p
       
       p
-    })
+    }, height = 750)
     
     
     output$tcga.roc.forest.downbttn.csv <- downloadHandler(
@@ -536,6 +558,7 @@ server <- function(input, output, session) {
       dataForForestPlot$mir <- mir.name
       
       dataForForestPlot$Project <- projects.tcga
+      
       o <- order(dataForForestPlot$HR, decreasing = F)
       
       dataForForestPlot <- dataForForestPlot[o,]
@@ -545,13 +568,25 @@ server <- function(input, output, session) {
       
       tcga.overview$km.forest.data <- dataForForestPlot
       
+      dataForForestPlot$HR <- ifelse(dataForForestPlot$HR>100, 100, dataForForestPlot$HR)
+      dataForForestPlot$Upper95 <- ifelse(dataForForestPlot$Upper95>100, Inf, dataForForestPlot$Upper95)
+      
+      filter <- which(dataForForestPlot$Upper95==Inf | dataForForestPlot$Lower95==-Inf | is.na(dataForForestPlot$HR))
+      if (length(filter)>0) {
+        dataForForestPlot <- dataForForestPlot[-filter,]
+      }
+      
+      if (nrow(dataForForestPlot)==0) {
+        p <- ggplot()
+      }
+      
       p <- tcgaKMForestplotFunT(dataForForestPlot)
       
       tcga.overview$km.forest.plot <- p
       
       p
       
-    })
+    }, height = 950)
     
     
     output$tcga.km.forest.downbttn.csv <- downloadHandler(
@@ -589,7 +624,7 @@ server <- function(input, output, session) {
       
       output$tcga_violinplot <- renderPlot({
         
-        mir.id <- input$mir.id
+        #mir.id <- input$mir.id
         
         if (mir.id=='') {
           return()
@@ -776,7 +811,8 @@ server <- function(input, output, session) {
     )
     
     
-    observeEvent(input$correlation_rows_selected, {
+    observe({ #Event(input$correlation_rows_selected, 
+      req(input$mir.id, input$correlation_rows_selected)
       
       mir <- input$mir.id
       
@@ -855,9 +891,6 @@ server <- function(input, output, session) {
           dev.off()
         })
       
-      
-      
-      
       output$cor_heatmap <- renderPlotly({
         
         if (mir.id=='') {
@@ -935,27 +968,25 @@ server <- function(input, output, session) {
     })
     
     
-    
     observe({
+      
+      req(input$mir.id, input$geneset.id)
       
       mir <- input$mir.id
       mir.name <- mir.annotation[mir, 'Name']
       
-      if (mir=='') {
-        return()
-      }
+      geneset <- input$geneset.id
       
-      signature.enrich <- reactive({
-        geneset <- input$geneset.id
-        
-        enrich.table <- enrichment.table[[geneset]][[mir]]
-        enrich.table
-      })
-
+      # signature.enrich <- reactive({
+      #   enrich.table <- enrichment.table[[geneset]][[mir]]
+      #   enrich.table
+      # })
+      # 
+      dataForBarPlot <- enrichment.table[[geneset]][[mir]]
       
       plotHeight.Enrich.Bubble <- reactive({
         
-        dataForBarPlot <- signature.enrich()
+        #dataForBarPlot <- signature.enrich()
         
         if (nrow(dataForBarPlot)>=30) {
           500
@@ -967,9 +998,10 @@ server <- function(input, output, session) {
         
       })
       
+      
       plotHeight.Enrich.Bar <- reactive({
         
-        dataForBarPlot <- signature.enrich()
+        #dataForBarPlot <- signature.enrich()
         
         if (nrow(dataForBarPlot)>=26) {
           500
@@ -979,14 +1011,12 @@ server <- function(input, output, session) {
         
       })
       
-      
-      geneset <- input$geneset.id
-      
       output$enrichment <- DT::renderDataTable({
         
         mir <- input$mir.id
         
-        if (mir.id=='') {
+        if (mir=='') {
+          #enrich.table <- enrichment.table[['DO']][['MIMAT0010195']]
           return()
         }
         
@@ -1026,7 +1056,7 @@ server <- function(input, output, session) {
         
         mir <- input$mir.id
         
-        if (mir.id=='') {
+        if (mir=='') {
           return()
         }
         
@@ -1083,7 +1113,7 @@ server <- function(input, output, session) {
         
         mir <- input$mir.id
         
-        if (mir.id=='') {
+        if (mir=='') {
           return()
         }
         
@@ -1434,7 +1464,6 @@ server <- function(input, output, session) {
       
     })
     
-    
     ##### highly expressed miRNAs
     output$high.expr.table.tcga <- DT::renderDataTable({
       
@@ -1495,6 +1524,12 @@ server <- function(input, output, session) {
     
     
     observeEvent(input$tcga_metadata, {
+      
+      # if (project=='TCGA-GBM' & input$tcga_metadata != 'sample_type') {
+      #   shinyjs::hide('groups.tcga.diy')
+      #   #shinyalert(text=paste0('No tumor sample in the selected TCGA-GBM dataset'))
+      #   return ()
+      # }
       
       meta.name <- input$tcga_metadata
       
@@ -1592,6 +1627,7 @@ server <- function(input, output, session) {
                       )
                       )
       
+      shinyjs::show('groups.tcga.diy')
       
       shinyjs::hide('table_sample_type_tcga')
       shinyjs::hide('volcano_sample_type_tcga')
@@ -1792,9 +1828,18 @@ server <- function(input, output, session) {
       
     }) # }, height = 700, width = 700)
     
+    # if(project=='TCGA-GBM' & (input$tcga.tabsetpanel=='survival')) {
+    #   shinyalert(text=paste0('No tumor sample in the selected TCGA-GBM dataset'));
+    #   return()
+    # }
     
     ##### ROC analysis
     output$tcga_roc_analysis_table <- DT::renderDataTable({
+      
+      # if(project=='TCGA-GBM' & input$tcga.tabsetpanel=='roc') {
+      #   shinyalert(text=paste0('No tumor sample in the selected TCGA-GBM dataset'));
+      #   return()
+      # }
       
       roc.tcga[[project]]
       
@@ -1812,6 +1857,11 @@ server <- function(input, output, session) {
     ##### feature selection
     
     output$tcga.feature.plot1 <- renderPlot({
+      
+      # if(project=='TCGA-GBM' & input$tcga.tabsetpanel=='feature_selection') {
+      #   shinyalert(text=paste0('No tumor sample in the selected TCGA-GBM dataset'));
+      #   return()
+      # }
       
       group <- meta$sample_type
       
@@ -1843,10 +1893,12 @@ server <- function(input, output, session) {
     server = FALSE
     )
     
-    
-    
-    
     output$table_km_tcga <- DT::renderDataTable({
+      
+      # if(project=='TCGA-GBM' & input$tcga.tabsetpanel=='survival') {
+      #   shinyalert(text=paste0('No tumor sample in the selected TCGA-GBM dataset'));
+      #   return()
+      # }
       
       dt <- km.tcga[[project]]
       
@@ -1956,7 +2008,28 @@ server <- function(input, output, session) {
     
     output$surv_roc_plot_tcga <- renderPlot({
       
-      p <- surv.roc.plot.tcga[[project]]
+      # dataForROCPlot <- surv.roc.plot.tcga[[project]]
+      # 
+      # if (is.null(dataForROCPlot)) {
+      #   p <- ggplot(dataForROCPlot)
+      # } else {
+      #   p <- KMRiskPlotFun(dataForROCPlot)
+      # }
+      # 
+      # #p <- surv.roc.plot.tcga[[project]]
+      # 
+      # tcga.risk$roc.plot <- p
+      # 
+      # p
+      
+      dataForSurvROCPlot <- surv.roc.plot.tcga[[project]]
+      
+      if (is.null(dataForSurvROCPlot)) {
+        p <- ggplot()
+      } else {
+        auc <- dataForSurvROCPlot$auc[1]
+        p <- SurvROCPlotFun(dataForSurvROCPlot, auc = auc)
+      }
       
       tcga.risk$roc.plot <- p
       
@@ -1989,8 +2062,142 @@ server <- function(input, output, session) {
         dev.off()
       })
     
+    
+    observeEvent(input$surv_submit, {
+      
+      mirs <- gsub('^\\s+|\\s+$|,$|;$', '', input$surv_mir_input)
+      mirs <- gsub('\\s*;\\s*', ';', mirs)
+      mirs <- gsub('\\s*,\\s*', ',', mirs)
+      #mirs <- gsub('^\\s+$', '', mirs)
+      
+      mirs <- strsplit(x = mirs, split=',|;|\\s+')[[1]]
+      
+      idx <- which(!mirs %in% rownames(expr))
+      
+      output$invalid_mirs <- renderText({ 
+        
+        if (length(idx)==0 & length(mirs)!=0) {
+          txt <- 'All the miRNAs in the signature are detected in the training dataset !'
+        } else if (length(idx)!=0 & length(mirs)!=0) {
+          txt <- paste0('Warning: ', length(idx), ' miRNAs are not detected in the training dataset\n',
+                        paste(mirs[idx], collapse = ','))
+        } else if (length(mirs)==0) {
+          txt <- 'Warning: No miRNA is detected in the training dataset\n'
+        }
+        
+        txt
+        
+      })
+      
+      keep <- intersect(mirs, rownames(expr))
+      
+      if(length(keep) == 0) {
+        #shinyalert(text='No gene is identified in the training dataset!');
+        return()
+      }
+      
+      samples <- which(meta[,'sample_type'] == 'Tumor')
+      
+      training.geno <- expr[keep, samples]
+      training.pheno <- meta[samples,]
+      
+      training.pheno$OS <- as.numeric(training.pheno$OS)
+      training.pheno$OS.time <- as.numeric(training.pheno$OS.time)/30
+      
+      
+      filter <- which(is.na(training.pheno$OS) | is.na(training.pheno$OS.time))
+      
+      if (length(filter)>0) {
+        training.geno <- training.geno[,-filter]
+        training.pheno <- training.pheno[-filter,]
+      }
+      
+      coeffs <- survModelFun(model = input$surv_model_method, 
+                             training.geno = training.geno, 
+                             training.pheno = training.pheno)
+      
+      coeffs$Name <- mir.annotation$Name[match(coeffs$ID, mir.annotation$ID)]
+      
+      output$table_coeffs <- DT::renderDataTable({
+        if(length(keep) == 0) {
+          return()
+        }
+        #coeffs$Coefficients <- round(coeffs$Coefficients, digits = 6)
+        coeffs
+        
+      },
+      callback=table.download.button,
+      options = list(pageLength = 10, dom = 'rtBp', buttons = c('copy', 'csv', 'excel')), #i
+      extensions = "Buttons",
+      selection = list(mode='none', selected=1), ### === not selectable
+      rownames = FALSE,
+      server = FALSE
+      )
+      
+      tcga.signature <- reactiveValues()
+      
+      output$training_km_plot <- renderPlot({
+        
+        if(length(keep) == 0) {
+          return()
+        }
+        
+        score <- as.numeric(apply(training.geno, 2, function(v) sum(v*coeffs$Coefficients)))
+        risk.threshold <- median(score, na.rm = T)
+        
+        risk.group <- score > risk.threshold
+        
+        if (length(unique(risk.group))==1) {
+          return ()
+        }
+        
+        dataForKMPlot <- data.frame(expr=score, 
+                                    time.to.bcr=as.numeric(training.pheno$OS.time),
+                                    bcr.status=as.numeric(training.pheno$OS),
+                                    stringsAsFactors = F)
+        
+        tcga.signature$km.data <- dataForKMPlot
+        
+        p <- ModelKMPlotFun(dataForKMPlot, score.type='risk', x.adjust=-0.05, dt=NULL, type='os',)
+        
+        tcga.signature$km.data <- dataForKMPlot
+        tcga.signature$km.plot <- p
+        
+        p
+        
+      })
+      
+      
+      output$signature.km.downbttn.csv <- downloadHandler(
+        filename = function(){paste('Signature.', project, '.Training.KM_Survival_Data.csv', sep = '')},
+        
+        content = function(file){
+          write.csv(tcga.signature$km.data, file, row.names = FALSE, quote = F)
+        })
+      
+      output$signature.km.downbttn.png <- downloadHandler(
+        filename = function(){paste('Signature.', project, '.Training.KM_Survival_Curve.png', sep = '')},
+        
+        content = function(file){
+          png(file, width = 500, height = 500)
+          print(tcga.signature$km.plot)
+          dev.off()
+        })
+      
+      output$signature.km.downbttn.pdf <- downloadHandler(
+        filename = function(){paste('Signature.', project, '.Training.KM_Survival_Curve.pdf', sep = '')},
+        
+        content = function(file){
+          pdf(file, width = 5, height = 5)
+          print(tcga.signature$km.plot)
+          dev.off()
+        })
+      
+      
+      
+    }) 
+    
     })
-  
   
   
   #################### miRNomes
@@ -2481,8 +2688,11 @@ server <- function(input, output, session) {
     
     shinyjs::hide('ccma.feature.plot1')
     shinyjs::hide('ccma.feature.table')
+    shinyjs::hide('ccma.feature.plot2')
     
     observeEvent(input$feature.selection.submit, {
+      
+      #ccma.feature.vals <- reactiveValues()
       
       idx <- unlist(sapply(feature.group.names, function(i) input[[i]]))
       
@@ -2507,6 +2717,8 @@ server <- function(input, output, session) {
       deg.group.ccma <- factor(deg.group.ccma)
       group <- deg.group.ccma
       
+      #ccma.feature.vals$group <- group
+      
       mir.id <- expr.high.ccma[[dataset]]$miRNA.Accession
       mir.name <- mir.annotation[mir.id,]$Name
       
@@ -2523,6 +2735,8 @@ server <- function(input, output, session) {
           dataForROCAnalysis <- dataForROCAnalysis[-filter,]
         }
         
+        #ccma.feature.vals$expr <- dataForROCAnalysis
+        
         set.seed(777)
         cvfit<-cv.glmnet(x=t(dataForROCAnalysis),y=group, alpha=1, 
                          family = "binomial", type.measure="class") #class
@@ -2531,6 +2745,7 @@ server <- function(input, output, session) {
       
       shinyjs::show('ccma.feature.plot1')
       shinyjs::show('ccma.feature.table')
+      shinyjs::show('ccma.feature.plot2')
       
       ##### feature selection
       
@@ -2540,28 +2755,29 @@ server <- function(input, output, session) {
         
       }, height = 400)
       
-      
       output$ccma.feature.table <- DT::renderDataTable({
         
         coef.min<-coef(cvfit,s="lambda.min")
         feature <- data.frame(coef.min@Dimnames[[1]],matrix(coef.min), stringsAsFactors = F)
-        colnames(feature) <- c('miRNA.Accession','Coefficient')
+        colnames(feature) <- c('miRNA.Accession','Coefficients')
         
-        keep <- which(feature$Coefficient!=0)
+        keep <- which(feature$Coefficients!=0)
         feature <- feature[keep,]
         
         feature <- data.frame(miRNA.Accession=feature$miRNA.Accession,
                               miRNA.ID=mir.annotation[feature$miRNA.Accession,]$Name,
-                              Coefficient=feature$Coefficient,
+                              Coefficients=feature$Coefficients,
                               row.names = NULL,
                               stringsAsFactors = F)
         
         feature <- feature[-1,]
         
-        o <- order(abs(feature$Coefficient), decreasing = T)
+        o <- order(abs(feature$Coefficients), decreasing = T)
         feature <- feature[o,]
         
         feature[,3] <- round(feature[,3],4)
+        
+        #ccma.feature.vals$coef <- feature
         
         feature
         
@@ -2574,7 +2790,41 @@ server <- function(input, output, session) {
       server = FALSE
       )
       
+      # output$ccma.feature.plot2 <- renderPlot({
+      #   
+      #   features <- ccma.feature.vals$coef
+      #   mirs <- features$miRNA.Accession
+      #   
+      #   group <- ccma.feature.vals$group
+      #   expr <- ccma.feature.vals$expr[mirs,]
+      #   coef <- features$Coefficients
+      #   
+      #   dataForROCPlot <- data.frame(group=group, expr=as.numeric(apply(expr, 2, function(v) sum(v*coef))),
+      #                                #mir=mir.name, project, sample, group, expr,
+      #                                stringsAsFactors = F)
+      #   
+      #   #tcga.mir.project$roc.data <- dataForROCPlot
+      #   
+      #   dataForROCPlot$group <- ifelse(dataForROCPlot$group=='Control',0,1)
+      #   
+      #   p <- rocplotFun(dataForROCPlot)
+      #   
+      #   #tcga.mir.project$roc.plot <- p
+      #   
+      #   p
+      #   
+      # })
+      
     })
+    
+    
+
+    
+    
+    
+    
+    
+    
     
     
     output$pca.ccma.2d <- renderPlotly({

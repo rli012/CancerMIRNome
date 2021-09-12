@@ -11,6 +11,13 @@ library(shinycssloaders)
 library(plotly)
 library(shinythemes)
 library(slickR)
+library(shinyalert)
+library(shinydisconnect)
+
+google.red <- '#ea4235'
+google.yellow <- '#fabd03'
+google.green <- '#34a853'
+google.blue <- '#4286f5'
 
 ### TCGA Datasets
 # tcga.datasets <- readRDS('data/TCGA_Projects.RDS')
@@ -73,8 +80,7 @@ library(slickR)
 # expr.ccma <- readRDS('data/miRNomes_Expression.RDS')
 # meta.ccma <- readRDS('data/miRNomes_Metadata.RDS')
 # 
-# pca.ccma <- readRDS(file='data/PCA.Analysis.CCMA.RDS')
-
+# pca.ccma <- readRDS(file='data/PCA.Analysis.CCMA.RDS'
 
 
 ################################## Input #####################################
@@ -86,7 +92,7 @@ mir.default <- 'MIMAT0000062' # hsa-let-7a-5p
 
 mir.id <- selectizeInput(inputId = "mir.id", label=h4(strong(icon("search"), "Search a miRNA"), align='center', style='font-family:Georgia;color:#2C3E50'),
                            #h4(strong('Search a miRNA'),style='font-family:Georgia;color:#2C3E50'), #list(h4('Search a miRNA:'), icon('search', 'fa-1.5x')),# h4(strong('miRNA'))
-                         choices = NULL, selected = mir.default, #mir.default, 
+                         choices = NULL, selected = mir.default, #mir.default,
                          multiple = FALSE, width = 400,
                          options = list(placeholder = 'e.g. hsa-let-7a-5p', #  or MIMAT0000062
                                         server = TRUE, selectOnTab=TRUE,
@@ -94,7 +100,7 @@ mir.id <- selectizeInput(inputId = "mir.id", label=h4(strong(icon("search"), "Se
                                         labelField = "Name",
                                         valueField = "ID",
                                         #maxOptions = 5,
-                                        render = I("{option: function(item, escape) 
+                                        render = I("{option: function(item, escape)
                                                    {var gene = '<div>' + '<strong>' + escape(item.Name) + '</strong>' + '<ul>';
                                                    gene = gene + '<li>' + 'Previous IDs: ' + item.Previous_ID + '</li>';
                                                    gene = gene + '<li>' + 'Accession: ' + item.ID + '</li>' + '</ul>' + '</div>';
@@ -110,17 +116,17 @@ mir.id <- selectizeInput(inputId = "mir.id", label=h4(strong(icon("search"), "Se
 circulating.expression.default <- 'GSE106817' # hsa-let-7a-5p
 #mir.annotation <- readRDS('data/miRBase_10.0_22.RDS')
 
-circulating.expression.id <- selectizeInput(inputId = "circulating.expression.id", 
+circulating.expression.id <- selectizeInput(inputId = "circulating.expression.id",
                          label=h4(strong('Select a dataset')), #list(h4('Search a miRNA:'), icon('search', 'fa-1.5x')),# h4(strong('miRNA'))
-                         choices = NULL, selected = circulating.expression.default, #mir.default, 
+                         choices = NULL, selected = circulating.expression.default, #mir.default,
                          multiple = FALSE, width = 600,
-                         options = list(placeholder = 'e.g. GSE106817', 
+                         options = list(placeholder = 'e.g. GSE106817',
                                         server = TRUE, selectOnTab=TRUE,
                                         searchField = c('Name', 'Disease'),
                                         labelField = "Name",
                                         valueField = "Dataset",
                                         #maxOptions = 5,
-                                        render = I("{option: function(item, escape) 
+                                        render = I("{option: function(item, escape)
                                                    {var gene = '<div>' + '<strong>' + escape(item.Name) + '</strong>' + '<ul>';
                                                    gene = gene + '<li>' + 'Sample types: ' + item.Disease + '</li>' + '</ul>' + '</div>';
                                                    return gene
@@ -133,14 +139,14 @@ circulating.expression.id <- selectizeInput(inputId = "circulating.expression.id
 project.default <- 'TCGA-BLCA'
 
 project.id <- selectizeInput(inputId = "project.id", label=h5(strong('TCGA Project:')),# h4(strong('miRNA'))
-                             choices = NULL, selected = project.default, 
+                             choices = NULL, selected = project.default,
                              multiple = FALSE, width = 150,
                              options = list(placeholder = 'Select a project',
                                             server = TRUE, selectOnTab=TRUE
                              ))
 
 project.id.cor <- selectizeInput(inputId = "project.id.cor", label=h5(strong('TCGA Project:')),# h4(strong('miRNA'))
-                                 choices = NULL, selected = project.default, 
+                                 choices = NULL, selected = project.default,
                                  multiple = FALSE, width = 150,
                                  options = list(placeholder = 'Select a project',
                                                 server = TRUE, selectOnTab=TRUE
@@ -152,7 +158,7 @@ gene.sets <- c('Kyoto Encyclopedia of Genes and Genomes (KEGG)' = 'KEGG',
                'REACTOME' = 'REACTOME',
                'Disease Ontology (DO)' = 'DO',
                'Network of Cancer Gene (NCG)' = 'NCG',
-               'DisGeNET' = 'DGN', 
+               'DisGeNET' = 'DGN',
                'Gene Ontology - Biological Process (GO-BP)' = 'GOBP',
                'Gene Ontology - Cellular Component (GO-CC)' = 'GOCC',
                'Gene Ontology - Molecular Function (GO-MF)' = 'GOMF',
@@ -165,9 +171,27 @@ gene.sets <- c('Kyoto Encyclopedia of Genes and Genomes (KEGG)' = 'KEGG',
 
 geneset.id.default <- gene.sets[1]
 geneset.id <- selectizeInput(inputId = "geneset.id", label=h5(strong('Gene Sets:')),# h4(strong('miRNA'))
-                             choices = NULL, selected = geneset.id.default, 
+                             choices = NULL, selected = geneset.id.default,
                              multiple = FALSE, width = 410,
                              options = list(placeholder = 'Select a gene set',
+                                            server = TRUE, selectOnTab=TRUE
+                             ))
+
+
+
+
+## Survival
+
+survival.analysis <- c('Univariate Survival Analysis' = 'Univariate',
+                      'Pre-built Prognostic Model' = 'Pre-built',
+                      'User-provided Prognostic Signature' = 'User-provided'
+)
+
+survival.analysis.default <- survival.analysis[1]
+survival_analysis_input <- selectizeInput(inputId = "survival_analysis_input", label=h5(strong('Survival Analysis Modules:')),# h4(strong('miRNA'))
+                             choices = NULL, selected = survival.analysis.default,
+                             multiple = FALSE, width = 310,
+                             options = list(placeholder = NULL,
                                             server = TRUE, selectOnTab=TRUE
                              ))
 
@@ -200,7 +224,7 @@ tab_home <- dashboardPage(
     #   #                 subtitle = tags$p(strong("Cancer types"), style = "font-size: 160%;"),  icon = icon("dna fa-0.5x")),
     #   #        # valueBox(value = '88', color = 'teal', width = 3,
     #   #        #          subtitle = tags$p(strong("Studies"), style = "font-size: 200%;"), icon = icon("database")),
-    #   #        valueBox(value = tags$p(strong("10,998"), style = "font-size: 90%;"), color = 'aqua', width = 3,
+    #   #        valueBox(value = tags$p(strong("10,554"), style = "font-size: 90%;"), color = 'aqua', width = 3,
     #   #                 subtitle = tags$p(strong("Samples"), style = "font-size: 160%;"),  icon = icon("user-circle"))
     #   # ),
     #   # 
@@ -213,7 +237,7 @@ tab_home <- dashboardPage(
     #   #                 subtitle = tags$p(strong("Cancer types"), style = "font-size: 160%;"),  icon = icon("dna")),
     #   #        valueBox(value = tags$p(strong("40"), style = "font-size: 90%;"), color = 'teal', width = 3,
     #   #                 subtitle = tags$p(strong("Studies"), style = "font-size: 160%;"), icon = icon("database")),
-    #   #        valueBox(value = tags$p(strong("21,993"), style = "font-size: 90%;"), color = 'teal', width = 3,
+    #   #        valueBox(value = tags$p(strong("28,633"), style = "font-size: 90%;"), color = 'teal', width = 3,
     #   #                 subtitle = tags$p(strong("Samples"), style = "font-size: 160%;"),  icon = icon("user-circle"))
     #   #        
     #   # )
@@ -222,16 +246,16 @@ tab_home <- dashboardPage(
     
     box(
       title = NULL, status = "primary", solidHeader = FALSE, collapsible = FALSE,
-      width = 12,
+      width = 9,
       
       column(12,
              h4(strong('The Cancer Genome Atlas (TCGA) miRNome'), style='font-family:Georgia;color:#2C3E50'),
              
-             valueBox(value = tags$p(strong("33"), style = "font-size: 80%;"), color = 'aqua', width = 3,
+             valueBox(value = tags$p(strong("33"), style = "font-size: 80%;"), color = 'aqua', width = 4,
                       subtitle = tags$p(strong("Cancer types"), style = "font-size: 150%;"), tags$i(class = "fa fa-dna", style="font-size: 60px")),
              # valueBox(value = '88', color = 'teal', width = 3,
              #          subtitle = tags$p(strong("Studies"), style = "font-size: 200%;"), icon = icon("database")),
-             valueBox(value = tags$p(strong("10,998"), style = "font-size: 80%;"), color = 'aqua', width = 3,
+             valueBox(value = tags$p(strong("10,554"), style = "font-size: 80%;"), color = 'aqua', width = 4,
                       subtitle = tags$p(strong("Samples"), style = "font-size: 150%;"), tags$i(class = "fa fa-user-circle", style="font-size: 65px"))
       ),
       
@@ -240,14 +264,33 @@ tab_home <- dashboardPage(
       column(12,
              h4(strong('Circulating miRNome Profiles of Human Cancer'), style='font-family:Georgia;color:#2C3E50'),
              
-             valueBox(value = tags$p(strong("32"), style = "font-size: 80%;"), color = 'teal', width = 3,
+             valueBox(value = tags$p(strong("32"), style = "font-size: 80%;"), color = 'teal', width = 4,
                       subtitle = tags$p(strong("Cancer types"), style = "font-size: 150%;"), tags$i(class = "fa fa-dna", style="font-size: 60px")),
-             valueBox(value = tags$p(strong("40"), style = "font-size: 80%;"), color = 'teal', width = 3,
+             valueBox(value = tags$p(strong("40"), style = "font-size: 80%;"), color = 'teal', width = 4,
                       subtitle = tags$p(strong("Studies"), style = "font-size: 150%;"), tags$i(class = "fa fa-database", style="font-size: 60px")),
-             valueBox(value = tags$p(strong("21,993"), style = "font-size: 80%;"), color = 'teal', width = 3,
+             valueBox(value = tags$p(strong("28,633"), style = "font-size: 80%;"), color = 'teal', width = 4,
                       subtitle = tags$p(strong("Samples"), style = "font-size: 150%;"), tags$i(class = "fa fa-user-circle", style="font-size: 65px"))
              
       )
+    ),
+    
+    box(
+      title = 'News', solidHeader = TRUE, collapsible = FALSE, status = 'primary',
+      width = 3, height = '361px', # solidHeader=TRUE can remove the top boarder
+      #h5(strong("News")),
+      tags$p(strong("2021-09-09"),
+             style = "font-size: 100%;text-align:justify; color:orange;"),
+      tags$p("CancerMIRNome has been published in ",
+             style = "font-size: 100%; text-align: justify; display:inline;"),
+      tags$i("Nucleic Acids Research ",
+             style = "font-size: 100%; text-align: justify; display:inline;"),
+      tags$p("!",
+             style = "font-size: 100%; text-align: justify; display:inline;"),
+      tags$p(HTML("<a href='https://doi.org/10.1093/nar/gkab784' target='_blank'>https://doi.org/10.1093/nar/gkab784</a>"))
+      # tags$p(strong("2021-08-06"),
+      #        style = "font-size: 100%;text-align:justify; color:orange;"),
+      # tags$p("Project initiated.",
+      #        style = "font-size: 100%; text-align: justify;")
     ),
     
     
@@ -256,10 +299,22 @@ tab_home <- dashboardPage(
       title = NULL, solidHeader = TRUE, collapsible = FALSE,
       width = 12, # solidHeader=TRUE can remove the top boarder
       
+      # box(
+      #   title = NULL, #strong("miRNAs in cancer"), 
+      #   solidHeader = TRUE, collapsible = FALSE, status = 'success',
+      #   width = 12, #height = '350px', # solidHeader=TRUE can remove the top boarder
+      #   column(12,
+      #   h5(strong("Citation")),
+      #   tags$p('Please cite the following publication:
+      #        Li,R., et al. (2021) CancerMIRNome: an interactive analysis and visualization database for miRNome profiles of human cancer. Nucleic Acids Research, gkab784', style = "font-size: 120%;"),
+      #   tags$p(HTML("<a href='https://doi.org/10.1093/nar/gkab784' target='_blank'><h5>https://doi.org/10.1093/nar/gkab784</h5></a>"))
+      #   )
+      # ),
+      
       box(
         title = NULL, #strong("miRNAs in cancer"), 
         solidHeader = TRUE, collapsible = FALSE, status = 'success',
-        width = 6, # solidHeader=TRUE can remove the top boarder
+        width = 6, #height = '350px', # solidHeader=TRUE can remove the top boarder
       
       
       column(12,
@@ -275,7 +330,7 @@ tab_home <- dashboardPage(
              # #diagnosis and prognosis.", 
              tags$p("miRNAs are a class of small endogenous non-coding RNAs of ~22nt in length 
                     that negatively regulate the expression of their target protein-coding genes. 
-                    It has been reported that miRNAs are involved in many biological processes, 
+                    miRNAs are reported to be involved in many biological processes, 
                     such as cell proliferation, differentiation, and apoptosis. 
                     Mounting evidence has demonstrated that miRNAs are dysregulated in various types 
                     of human cancer, which can be leveraged as expression biomarkers/signatures for cancer 
@@ -290,7 +345,7 @@ tab_home <- dashboardPage(
       box(
         title = NULL, #strong("Circulating miRNAs as promising diagnostic biomarkers"), 
         solidHeader = TRUE, collapsible = FALSE, status = 'success',
-        width = 6, # solidHeader=TRUE can remove the top boarder
+        width = 6, #height = '350px', # solidHeader=TRUE can remove the top boarder
         column(12,
              h5(strong("Circulating miRNAs as promising diagnostic biomarkers")),
              
@@ -321,7 +376,7 @@ tab_home <- dashboardPage(
         column(12,
              h5(strong("About CancerMIRNome")),
              tags$p('CancerMIRNome is a comprehensive database with
-             the huamn miRNome data of 33 cancer types from 
+             the human miRNome profiles of 33 cancer types from 
              The Cancer Genome Atlas (TCGA), and 40 public cancer circulating miRNome 
              profiling datasets from NCBI Gene Expression Omnibus (GEO) and ArrayExpress.', style = "font-size: 120%;"),
              tags$p('CancerMIRNome provides a user-friendly interface and a suite of advanced functions for: 
@@ -338,18 +393,23 @@ tab_home <- dashboardPage(
 
       column(1),
       column(10,
-             slickROutput("slick_output", width = '100%')
+             withSpinner(slickROutput("slick_output", width = '100%'), type=8)
              ),
       column(1),
       
       column(12,
              #br(),
              tags$hr(style="border-top: 1px dashed #A9A9A9"),
-             
+
              h5(strong("Citation")),
              tags$p('Please cite the following publication:
-             Li,R., et al. (2021) CancerMIRNome: an interactive analysis and visualization database for miRNome profiles of human cancer. bioRxiv, 10.1101/2020.10.04.325670.', style = "font-size: 120%;"),
-             tags$p(HTML("<a href='https://www.biorxiv.org/content/10.1101/2020.10.04.325670' target='_blank'><h5>https://www.biorxiv.org/content/10.1101/2020.10.04.325670</h5></a>"))
+             Li,R., et al. (2021) CancerMIRNome: an interactive analysis and visualization database for miRNome profiles of human cancer. ', style = "font-size: 120%; display:inline;"),
+             tags$i("Nucleic Acids Research",
+                    style = "font-size: 120%; display:inline;"),
+             tags$p(", gkab784",
+                    style = "font-size: 120%; display:inline;"),
+             
+             tags$p(HTML("<a href='https://doi.org/10.1093/nar/gkab784' target='_blank'><h5>https://doi.org/10.1093/nar/gkab784</h5></a>"))
              )
       )
       )
@@ -409,7 +469,7 @@ tab_query <- dashboardPage(
                                          h6("(Wilcoxon rank-sum test, ***: P < 0.001; **: P < 0.01; *: P < 0.05; ns: P > 0.05)", align = 'center'),
                                          br(),
                                          withSpinner(plotOutput('tcga_boxplot',width = 900, height = 400), # 1100 * 500
-                                                     type = 1),
+                                                     type = 1), # , proxy.height=300
                                          
                                   #),
                                   column(8),
@@ -428,8 +488,8 @@ tab_query <- dashboardPage(
                                   #column(11,
                                          h5("ROC Analysis Between Tumor and Normal Samples in TCGA", align = 'center'),
                                          br(),
-                                         withSpinner(plotOutput('tcga_rocplot_forest',width = 950, height = 800), # 1100 * 500
-                                                     type = 1),
+                                         withSpinner(plotOutput('tcga_rocplot_forest',width = 950, height = 750), # 1100 * 500
+                                                     type = 1), # , proxy.height=300
                                   #),
                                   column(8),
                                   column(4,
@@ -448,7 +508,7 @@ tab_query <- dashboardPage(
                                          h6("(Low- and high-expression groups were separated by median values)", align = 'center'),
                                          br(),
                                          withSpinner(plotOutput('tcga_km_forest',width = 950, height = 950), # 1100 * 600
-                                                     type = 1),
+                                                     type = 1), # , proxy.height=300
                                   #),
                                   column(8),
                                   column(4,
@@ -525,7 +585,7 @@ tab_query <- dashboardPage(
                                   column(6, 
                                          h5('miRNA-Target Correlation Plot', align='center'),
                                          #br(), 
-                                         withSpinner(plotOutput('cor_plot',width = 500, height = 400), type=1)),
+                                         withSpinner(plotOutput('cor_plot',width = 500, height = 400), type=1, proxy.height=300)),
                                   column(7),
                                   column(5,
                                          downloadButton(outputId='tcga.cor.downbttn.csv', label = "CSV"),
@@ -615,7 +675,7 @@ tab_query <- dashboardPage(
                            column(12, align="center",
                                   h5('miRNA Expression in the Selected Circulating miRNome Dataset', align='center'),
                                   br(),
-                                  withSpinner(plotOutput("circ_expr_violin_plot", height = '100%'), type=1),
+                                  withSpinner(plotOutput("circ_expr_violin_plot", height = '100%'), type=1, proxy.height=300),
                                   column(5),
                                   column(6,
                                          downloadButton(outputId='circ.expr.downbttn.csv', label = "CSV"),
@@ -665,7 +725,7 @@ tab_tcga <- dashboardPage(
       width = 12,
       
       #tabBox
-      tabsetPanel(#id = 'degbox.tcga',#width = 12, 
+      tabsetPanel(id = 'tcga.tabsetpanel', #width = 12, 
         
         tabPanel(strong("Summary"),
                  
@@ -682,6 +742,8 @@ tab_tcga <- dashboardPage(
                      height = 375,
                      plotlyOutput('pie_sample_type_tcga', width='100%', height='300px')
                  ),
+                 
+                 conditionalPanel(condition = 'input.tcga_datasets_rows_selected !=1000',
                  
                  box(title = 'Pathological Stage',
                      status = "info", solidHeader = TRUE, collapsible = FALSE,
@@ -717,6 +779,7 @@ tab_tcga <- dashboardPage(
                      width = 4,
                      height = 375,
                      plotlyOutput('km_os_time_tcga', width='100%', height='300px')
+                 )
                  )
                  
         ),
@@ -843,7 +906,7 @@ tab_tcga <- dashboardPage(
         ),
         
         
-        tabPanel(strong("ROC Analysis"),
+        tabPanel(strong("ROC Analysis"), value = 'roc',
                  column(12, 
                         br(),
                         hr(),
@@ -852,7 +915,7 @@ tab_tcga <- dashboardPage(
                  )
         ),
         
-        tabPanel(strong("Feature Selection"),
+        tabPanel(strong("Feature Selection"), value = 'feature_selection',
                  
                  column(12,
                         br(),
@@ -883,87 +946,161 @@ tab_tcga <- dashboardPage(
 
                         h5('2D Principal Component Analysis using Highly Expressed miRNAs', align='center'),
                         withSpinner(plotlyOutput('pca.tcga.2d'),
-                                    type = 1)
+                                    type = 1, proxy.height=300)
                         
                  ),
                  
                  column(6, 
                         h5('3D Principal Component Analysis using Highly Expressed miRNAs', align='center'),
                         withSpinner(plotlyOutput("pca.tcga.3d"),
-                                    type = 1)
+                                    type = 1, proxy.height=300)
                  )
                  
         ),
         
         
-        tabPanel(strong("Survival Analysis"),
+        tabPanel(strong("Survival Analysis"), value = 'survival',
+
                  column(12,
                         br(),
                         hr(),
-                        h5('Kaplan Meier (KM) Survival Analysis of the Highly Expressed miRNAs', align='center'),
-                        h6("(Low- and high-expression groups were separated by median values)", align = 'center'),
-                        DT::dataTableOutput('table_km_tcga')
-                 ),
-                 
-                 column(12,
-                        br(),
-                        tags$hr(style="border-top: 1px dashed #A9A9A9"),
-                        h5('Cox Proportional-Hazards (CoxPH) Survival Analysis of the Highly Expressed miRNAs', align='center'),
-                        DT::dataTableOutput('table_coxph_tcga')
-                 ),
-                 
-                 column(12,
-                        br(),
-                        tags$hr(style="border-top: 1px dashed #A9A9A9"),
-                        h5('Construction of a Prognostic Signature using LASSO', align='center')
-                 ),
-                 
-                 column(6,
-                        br(),
-                        plotOutput('lasso_plot_tcga')
-                 ),
-                 
-                 column(6,
-                        br(),
-                        DT::dataTableOutput('table_lasso_tcga')
-                 ),
-                 
-                 column(12,
-                        br(),
-                        tags$hr(style="border-top: 1px dashed #A9A9A9"),
-                        column(6,
-                               h5('Kaplan Meier Survival Analysis of the Prognostic Signature', align='center'),
-                               h6("(Low- and high-risk groups were separated by median values)", align = 'center'),
-                               
-                               plotOutput('risk_plot_tcga'),
-                               column(9),
-                               column(3,
-                                      downloadButton(outputId='risk.tcga.downbttn.csv', label = "CSV"),
-                                      #downloadButton(outputId='circ.expr.downbttn.png', label = "PNG"),
-                                      downloadButton(outputId='risk.tcga.downbttn.pdf', label = "PDF")
-                               )
+                        survival_analysis_input,
+                        tags$hr(style="border-top: 1px dashed #A9A9A9")
                         ),
-                        column(6,
-                               h5('Time-dependent ROC Analysis of the Prognostic Signature', align='center'),
-                               h6("(NNE method, span = 0.01)", align = 'center'),
-                               plotOutput('surv_roc_plot_tcga'),
-                               column(9),
-                               column(3,
-                                      downloadButton(outputId='surv.roc.downbttn.csv', label = "CSV"),
-                                      #downloadButton(outputId='circ.expr.downbttn.png', label = "PNG"),
-                                      downloadButton(outputId='surv.roc.downbttn.pdf', label = "PDF")
-                               )
-                        )
-                 )
                  
+                 conditionalPanel(condition = 'input.tcga_datasets_rows_selected !=1000',
+                                  conditionalPanel(condition = 'input.survival_analysis_input=="Univariate"',
+                                                   column(12,
+                                                          #tags$hr(style="border-top: 1px dashed #A9A9A9"),
+                                                          h5('Kaplan Meier (KM) Survival Analysis of the Highly Expressed miRNAs', align='center'),
+                                                          h6("(Low- and high-expression groups were separated by median values)", align = 'center'),
+                                                          DT::dataTableOutput('table_km_tcga'),
+                                                          
+                                                          br(),
+                                                          tags$hr(style="border-top: 1px dashed #A9A9A9"),
+                                                          h5('Cox Proportional-Hazards (CoxPH) Survival Analysis of the Highly Expressed miRNAs', align='center'),
+                                                          DT::dataTableOutput('table_coxph_tcga')
+                                                          )
+                                                   ),
+                                  conditionalPanel(condition = 'input.survival_analysis_input=="Pre-built"',
+                                                   column(12,
+                                                          #tags$hr(style="border-top: 1px dashed #A9A9A9"),
+                                                          h5('Pre-built Prognostic Model using Univariate CoxPH & Cox-Lasso', align='center')
+                                                   ),
+                                                   
+                                                   column(6,
+                                                          br(),
+                                                          plotOutput('lasso_plot_tcga')
+                                                   ),
+                                                   
+                                                   column(6,
+                                                          br(),
+                                                          DT::dataTableOutput('table_lasso_tcga')
+                                                   ),
+                                                   
+                                                   column(12,
+                                                          conditionalPanel(condition = 'input.tcga_datasets_rows_selected != 23+1 && 
+                                                                                  input.tcga_datasets_rows_selected != 26+1 && 
+                                                                                  input.tcga_datasets_rows_selected !=24+1 && 
+                                                                                  input.tcga_datasets_rows_selected !=5 && 
+                                                                                  input.tcga_datasets_rows_selected !=1000',
+                                                                           #br(),
+                                                                           tags$hr(style="border-top: 1px dashed #A9A9A9"),
+                                                                           column(6,
+                                                                                  h5('Kaplan Meier Survival Analysis of the Prognostic Model', align='center'),
+                                                                                  h6("(Low- and high-risk groups were separated by median values)", align = 'center'),
+                                                                                  
+                                                                                  plotOutput('risk_plot_tcga'),
+                                                                                  column(9),
+                                                                                  column(3,
+                                                                                         downloadButton(outputId='risk.tcga.downbttn.csv', label = "CSV"),
+                                                                                         #downloadButton(outputId='circ.expr.downbttn.png', label = "PNG"),
+                                                                                         downloadButton(outputId='risk.tcga.downbttn.pdf', label = "PDF")
+                                                                                  )
+                                                                           ),
+                                                                           column(6,
+                                                                                  h5('Time-dependent ROC Analysis of the Prognostic Model', align='center'),
+                                                                                  h6("(NNE method, span = 0.01)", align = 'center'),
+                                                                                  plotOutput('surv_roc_plot_tcga'),
+                                                                                  column(9),
+                                                                                  column(3,
+                                                                                         downloadButton(outputId='surv.roc.downbttn.csv', label = "CSV"),
+                                                                                         #downloadButton(outputId='circ.expr.downbttn.png', label = "PNG"),
+                                                                                         downloadButton(outputId='surv.roc.downbttn.pdf', label = "PDF")
+                                                                                  )
+                                                                           )
+                                                          )
+                                                   )
+                                                   ),
+                                  conditionalPanel(condition = 'input.survival_analysis_input=="User-provided"',
+                                                   column(4,
+                                                          textAreaInput(inputId = "surv_mir_input", label = strong("Paste a miRNA List\n(Accession Number):"), 
+                                                                        value = "MIMAT0000255\nMIMAT0000089\nMIMAT0004499\nMIMAT0000262\nMIMAT0000102\nMIMAT0000097", width = "310px", height = '200px')
+                                                   ),
+                                                   column(8,
+                                                          column(12, radioButtons(inputId = "surv_model_method", label = strong("Method:"),
+                                                                                  choices = c('CoxPH', 'Cox-Lasso', 'Cox-Ridge'), # ,'plsRcox'
+                                                                                  inline = TRUE)),
+                                                          
+                                                          #column(1),
+                                                          column(6, actionButton(inputId = 'surv_submit', label = strong('Submit'), icon=icon("check"), 
+                                                                                 style="color: #fff; background-color: #4095c9; border-color: #368dc2; border-width: 2px; font-size: 12px;",
+                                                                                 class = 'btn-sm', width = 200)),
+                                                          
+                                                          column(11, 
+                                                                 br(),
+                                                                 br(),
+                                                                 br(),
+                                                                 verbatimTextOutput("invalid_mirs"),
+                                                                 tags$head(tags$style(HTML("#invalid_mirs {font-size: 14px; color: darkred}")))
+                                                                 )
+                                                          ),
+                                                   
+                                                   column(12,
+                                                          tags$hr(style="border-top: 1px dashed #A9A9A9"),
+                                                          
+                                                          column(6,
+                                                                 conditionalPanel(condition = 'input.surv_submit',
+                                                                                  h5('Prognostic Model', align='center'),
+                                                                                  div(DT::dataTableOutput("table_coeffs"),style = "font-size:90%")
+                                                                 )
+                                                          ),
+                                                          
+                                                          column(6,
+                                                                 column(12,
+                                                                        conditionalPanel(condition = 'input.surv_submit',
+                                                                                         h5('Kaplan Meier Survival Analysis in the Training Dataset', align='center'),
+                                                                                         h6("(Low- and high-risk groups were separated by median values)", align = 'center')
+                                                                        )
+                                                                 ),
+                                                                 column(1),
+                                                                 column(11,
+                                                                        conditionalPanel(condition = 'input.surv_submit',
+                                                                                         withSpinner(plotOutput('training_km_plot',width = 360, height = 360), type = 4, proxy.height = 300),
+                                                                                         column(7),
+                                                                                         column(5,
+                                                                                                downloadButton(outputId='signature.km.downbttn.csv', label = "CSV"),
+                                                                                                #downloadButton(outputId='circ.expr.downbttn.png', label = "PNG"),
+                                                                                                downloadButton(outputId='signature.km.downbttn.pdf', label = "PDF")
+                                                                                         )
+                                                                                         
+                                                                        )
+                                                                 )
+                                                                 
+                                                          )
+                                                          
+                                                   )
+                                  )
+                                  )
         )
-        
       )
       
     )
     
   )
+  
   )
+  
 )
 
 
@@ -1161,7 +1298,7 @@ tab_circulating <- dashboardPage(
                                          h5('ROC Analysis Between Case and Control Samples', align = 'center'),
                                          #busyIndicator(wait = 0), # shinysky
                                          hidden(div(id = 'hide.roc', withSpinner(DT::dataTableOutput('ccma_roc_analysis_table'),
-                                                                                 type=5)))
+                                                                                 type=1, proxy.height=300)))
                                   )
                            )
                            
@@ -1196,16 +1333,23 @@ tab_circulating <- dashboardPage(
                                          column(6, 
                                                 br(),
                                                 hidden(div(id = 'hide.feature', withSpinner(plotOutput('ccma.feature.plot1'),
-                                                                                            type=5)))
+                                                                                            type=1, proxy.height=300)))
                                                 
                                          ),
                                          
                                          column(6, 
                                                 br(),
                                                 hidden(div(id = 'hide.feature', withSpinner(DT::dataTableOutput('ccma.feature.table'),
-                                                                                            type=5)))
+                                                                                            type=1, proxy.height=300)))
                                                 
-                                         )
+                                         )#,
+                                         # column(3),
+                                         # column(6, 
+                                         #        br(),
+                                         #        hidden(div(id = 'hide.feature', withSpinner(plotOutput('ccma.feature.plot2'),
+                                         #                                                    type=5)))
+                                         #        
+                                         # )
                                   )
                            )
                            
@@ -1222,14 +1366,14 @@ tab_circulating <- dashboardPage(
                            column(6, 
                                   h5('2D Principal Component Analysis using Highly Expressed miRNAs', align='center'),
                                   withSpinner(plotlyOutput('pca.ccma.2d'),
-                                              type = 1)
+                                              type = 1, proxy.height=300)
                                   
                            ),
                            
                            column(6, 
                                   h5('3D Principal Component Analysis using Highly Expressed miRNAs', align='center'),
                                   withSpinner(plotlyOutput('pca.ccma.3d'),
-                                              type = 1)
+                                              type = 1, proxy.height=300)
                            ),
                            
                            
@@ -1238,7 +1382,7 @@ tab_circulating <- dashboardPage(
                                   conditionalPanel(condition = 'output.panelStatus',
                                                    #h5('2D Principal Component Analysis using Highly Expressed miRNAs', align='center'),
                                                    withSpinner(plotlyOutput('pca.ccma.2d.group'),
-                                                               type = 1)
+                                                               type = 1, proxy.height=300)
                                   )
                            ),
                            
@@ -1248,7 +1392,7 @@ tab_circulating <- dashboardPage(
                                                    #h5('3D Principal Component Analysis using Highly Expressed miRNAs', align='center'),
                                                    #h6('(SubGroups)', align='center'),
                                                    withSpinner(plotlyOutput('pca.ccma.3d.group'),
-                                                               type = 1)
+                                                               type = 1, proxy.height=300)
                                   )
                            )
                            
@@ -1403,18 +1547,28 @@ tab_download <- dashboardPage(
                     tags$li(a(href='downloads/Circulating/GSE139164_eSet.RDS', target='_blank', 'GSE139164')),
                     tags$li(a(href='downloads/Circulating/GSE134108-GPL1894_eSet.RDS', target='_blank', 'GSE134108-GPL1894'))
              ),
+    
+    column(12, 
+           tags$hr(style="border-top: 1px dashed #A9A9A9"),
+           h5(strong("Integrated TCGA Sample Metadata"), align='left', style='color:black')
+    ),
+    
+    column(12,
+           tags$li(a(href='downloads/TCGA/Integrated_Sample_Metadata_TCGA.RDS', 
+                     target='_blank', 'Integrated_Sample_Metadata_TCGA.RDS'))
+    ),
       
-      column(12, 
-             tags$hr(style="border-top: 1px dashed #A9A9A9"),
-             h5(strong("miRNA Annotation"), align='left', style='color:black')
-      ),
-      
-      column(12,
-             tags$li(a(href='downloads/Annotation/miRNA_Annotation_miRBase_Release10.0_to_Release22.RDS', 
-                       target='_blank', 'miRNA_Annotation_miRBase_Release10.0_to_Release22.RDS'))
-      )
-             
-      )
+    column(12, 
+           tags$hr(style="border-top: 1px dashed #A9A9A9"),
+           h5(strong("miRNA Annotation"), align='left', style='color:black')
+    ),
+    
+    column(12,
+           tags$li(a(href='downloads/Annotation/miRNA_Annotation_miRBase_Release10.0_to_Release22.RDS', 
+                     target='_blank', 'miRNA_Annotation_miRBase_Release10.0_to_Release22.RDS'))
+    )
+    
+    )
       
     )
   )
@@ -1490,7 +1644,7 @@ tab_tutorial <- dashboardPage(
                               
                               br(),
                               
-                              tags$img(src='img/workflow_sm.jpg', width=800),
+                              tags$img(src='img/workflow.jpg', width=800),
                               #tags$img(src='img/workflow.jpg', width=800)
                               
                               # tags$p("Figure 1. Overview of the CancerMIRNome web server",
@@ -1884,40 +2038,68 @@ tab_tutorial <- dashboardPage(
                               
                               br(),
                               
+                              tags$p("Three survival analysis modules were developed in CancerMIRNome for the 
+                                     identification of prognostic miRNA biomarkers and development of miRNA 
+                                     expression-based prognostic models (Figure 8), including:",
+                                     style = "font-size: 100%; text-align: justify;"),
+                              tags$p("(1) Univariate Survival Analysis: univariate CoxPH regression analysis and KM survival analysis",
+                                     style = "font-size: 100%; text-align: justify;"),
+                              tags$p("(2) Pre-built Prognostic Model: development of pre-built prognostic models using the regularized Cox regression model with Lasso penalty (Cox-Lasso)",
+                                     style = "font-size: 100%; text-align: justify;"),
+                              tags$p("(3) User-provided Prognostic Signature: development of prognostic models for the user-provided miRNA signatures",
+                                     style = "font-size: 100%; text-align: justify;"),
+                              
+                              tags$img(src='img/tcga_survival_1.jpg', width=800),
+                              h6(strong('Figure 8. Overview of survival analysis modules'), align='center'),
+                              br(),
+                              
                               tags$p("CancerMIRNome supports both Cox Proportional-Hazards (CoxPH) 
                                      regression analysis and Kaplan-Meier (KM) survival analysis 
-                                     at a dataset level to identify prognostic miRNA biomarkers 
-                                     in a TCGA project (Figure 8).",
+                                     to identify prognostic miRNA biomarkers in a TCGA project (Figure 9).",
                                      style = "font-size: 100%; text-align: justify;"),
                               
+                              tags$img(src='img/tcga_survival_2.jpg', width=800),
+                              h6(strong('Figure 9. Univariate CoxPH and KM survival analysis'), align='center'),
+                              br(),
                               
-                              tags$p("The miRNAs with p values less than 0.05 
-                                     in the univariate CoxPH analysis will be jointly analysed 
-                                     using a regularized Cox regression model with LASSO penalty 
-                                     to develop a prognostic model [3]. The prognostic model, which is a linear combination of the finally selected miRNA variables with the LASSO-derived regression coefficients, will be used to calculate a risk score for each patient. All the patients will be divided into either high-risk group or low-risk group based on the median risk value in the cohort. The KM survival analysis and time-dependent ROC analysis can be performed to evaluate the prognostic ability of the miRNA-based prognostic model.", 
+                              tags$p("The pre-built prognostic model for each cancer type in TCGA was 
+                                     developed by jointly analyzing the significant miRNAs (p < 0.05) in the 
+                                     univariate CoxPH analysis using the regularized Cox regression model 
+                                     with LASSO penalty (Cox-Lasso) [3]. The prognostic model, 
+                                     which is a linear combination of the finally selected miRNA variables 
+                                     with the LASSO-derived regression coefficients, 
+                                     will be used to calculate a risk score for each patient. 
+                                     All the patients will be divided into either high-risk group or 
+                                     low-risk group based on the median risk value in the cohort. 
+                                     The KM survival analysis and time-dependent ROC analysis can be performed to 
+                                     evaluate the prognostic ability of the miRNA-based prognostic model.", 
                                      style = "font-size: 100%; text-align: justify;"),
                               
-                              tags$p("The prognostic model, which is a linear combination 
-                                     of the finally selected miRNA variables with the LASSO-derived 
-                                     regression coefficients, will be used to calculate a risk score
-                                     for each patient. All the patients will be divided into either 
-                                     high-risk group or low-risk group based on the median risk 
-                                     value in the cohort. The KM survival analysis and 
-                                     time-dependent ROC analysis can be performed to evaluate the 
-                                     prognostic ability of the miRNA-based prognostic model.", 
+                              tags$img(src='img/tcga_survival_3.jpg', width=800),
+                              h6(strong('Figure 10. Pre-built prognostic model'), align='center'),
+                              br(),
+                              
+                              tags$p("CancerMIRNome also provides a module allowing for users to submit 
+                                     their own miRNA expression signatures of interest to build prognostic 
+                                     models using three survival analysis methods (Figure 10), including multivariate 
+                                     CoxPH, Cox-Lasso, and Cox regression model regularized 
+                                     with ridge penalty (Cox-Ridge) [3,4].", 
                                      style = "font-size: 100%; text-align: justify;"),
                               
-                              tags$img(src='img/tcga_survival.jpg', width=800),
-                              
-                              h6(strong('Figure 8. Survival analysis'), align='center'),
-                              
+                              tags$img(src='img/tcga_survival_4.jpg', width=800),
+                              h6(strong('Figure 11. User-provided prognostic signature'), align='center'),
                               br(),
                               
                               h5(strong('References'), align='left'),
                               
                               tags$p("[1] Ritchie, M. E., Phipson, B., Wu, D., Hu, Y., Law, C. W., Shi, W., & Smyth, G. K. (2015). limma powers differential expression analyses for RNA-sequencing and microarray studies. Nucleic acids research, 43(7), e47.", style = "font-size: 80%;"),
                               tags$p("[2] Tibshirani, R. (1996) Regression shrinkage and selection via the lasso. Journal of the Royal Statistical Society: Series B (Methodological), 58, 267-288.", style = "font-size: 80%;"),
-                              tags$p("[3] Friedman, J., Hastie, T. and Tibshirani, R. (2010) Regularization paths for generalized linear models via coordinate descent. Journal of statistical software, 33, 1.", style = "font-size: 80%;")
+                              tags$p("[3] Friedman, J., Hastie, T. and Tibshirani, R. (2010) Regularization paths for generalized linear models via coordinate descent. Journal of statistical software, 33, 1.", style = "font-size: 80%;"),
+                              tags$p("[4] Li, R. and Jia, Z. (2021) PCaDB - a comprehensive and interactive database for transcriptomes from prostate cancer population cohorts. bioRxiv, 10.1101/2021.06.29.449134.", style = "font-size: 80%;"),
+                              
+                              #hr(),
+                              shinyjs::hidden(tags$p(HTML("<script type='text/javascript' id='clustrmaps' src='//cdn.clustrmaps.com/map_v2.js?cl=ffffff&w=150&t=tt&d=8Q_eTawC68onB0QcBDRdo3M5mhU-pCoRPOCaNoKbUCY'></script>"), align = 'left'))
+                              
                               
                             )
                    ),
@@ -2168,11 +2350,25 @@ tab_tutorial <- dashboardPage(
 
 ui <- fluidPage(
   #div(img(src = "img/CancerMIRNome_logo_white_ucr_new_database.jpg", style='margin-left: -20; margin-right: auto; width:1250px;height:130px')),
-  div(img(src = "img/logo.jpg", style='margin-left: -100; margin-right: auto; width:1250px;height:120px')),
+  div(img(src = "img/logo_long.jpg", style='margin-left: -18px; margin-right: auto; width:1750px;height:125px')), # margin-left: -100
   
   includeCSS("www/css/style.css"),
   #includeCSS("www/css/footer.css"),
   useShinyjs(),
+  useShinyalert(),
+  
+  disconnectMessage(
+    text = "Your session has timed out, please reload the page.",
+    refresh = "Reload now",
+    width = 'full', top = 'center', css = 'font-family:Georgia',
+    size = 30,
+    colour = google.blue,
+    background = "rgba(64, 64, 64, 0.9)",
+    overlayColour = "#999",
+    overlayOpacity = 0.7,
+    refreshColour = google.green
+  ),
+  
   #extendShinyjs(text = jscode, functions = "refresh"),
   tags$head(tags$meta(name = "viewport", content = "width=1280")),
   
@@ -2218,6 +2414,7 @@ ui <- fluidPage(
     #            '.navbar-default {margin-left: 2px;margin-right: 18px;margin-top: -2px;}'
   ),
   dashboardFooter(right = HTML('<footer><script type="text/javascript" src="//rf.revolvermaps.com/0/0/2.js?i=59d9778kul4&amp;m=0&amp;s=70&amp;c=ff0000&amp;t=1" async="async"></script></footer>'),
+                  #"<footer><script type='text/javascript' id='clustrmaps' src='//cdn.clustrmaps.com/map_v2.js?cl=ffffff&w=150&t=tt&d=8Q_eTawC68onB0QcBDRdo3M5mhU-pCoRPOCaNoKbUCY'></script></footer>"),
                   #https://www.revolvermaps.com/
                   left = HTML("<footer><h6>Contact: <a href='https://github.com/rli012' target='_blank'>Ruidong Li</a><br>Email: rli012@ucr.edu</h6><strong><h5><a href='http://jialab.ucr.acsitefactory.com/' target='_blank'>Jia Lab @ University of California, Riverside</a></h5></strong></footer>"))
                   #left_text = HTML("<footer><h6>\t\tCopyright &#169 2020 <a href='http://jialab.ucr.acsitefactory.com/' target='_blank'>Jia Lab</a>. <br><a href='https://plantbiology.ucr.edu/' target='_blank'>Department of Botany & Plant Sciences</a>, <br><a href='https://plantbiology.ucr.edu/' target='_blank'>University of California, Riverside</a></h6></footer>"))
