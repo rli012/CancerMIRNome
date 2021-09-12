@@ -339,16 +339,16 @@ tcgaROCForestplotFunT <- function(dataForForestPlot) {
     #geom_segment(aes(y=dataset, x=lower95.coxph, xend=upper95.coxph, yend=dataset), color='black', size=1) +
     #geom_segment(aes(y=6:1-0.1, x=lower95.coxph, xend=lower95.coxph, yend=6:!+0.1), color='black', size=1) +
     geom_errorbar(aes(ymin=Lower95, ymax=Upper95),width=0.4, size=0.8, color='black')+ 
-    geom_point(color=google.red, size=3, shape=18) + #shape=15, facet_grid(.~type) +
+    geom_point(color=google.red, size=4, shape=18) + #shape=15, facet_grid(.~type) +
     geom_text(data =dataForForestPlot, aes(x=seq_along(Project), y=-0.7, label=Project, group=NULL),
               size=5) +#, fontface='bold'
     geom_text(data =dataForForestPlot, aes(x=seq_along(Project), y=-0.5, label=N.Tumor, group=NULL),
               size=5) +#, fontface='bold'
     geom_text(data =dataForForestPlot, aes(x=seq_along(Project), y=-0.35, label=N.Normal, group=NULL),
               size=5) +#, fontface='bold'
-    geom_text(data =dataForForestPlot, aes(x=seq_along(Project), y=-0.15, label=AUC, group=NULL, vjust=-0.1),
+    geom_text(data =dataForForestPlot, aes(x=seq_along(Project), y=-0.15, label=AUC, group=NULL, vjust=-0.18),
               size=4.5) +
-    geom_text(data =dataForForestPlot, aes(x=seq_along(Project), y=-0.15, label=paste0('(', Lower95, '-', Upper95, ')'), group=NULL, vjust=1.1),
+    geom_text(data =dataForForestPlot, aes(x=seq_along(Project), y=-0.15, label=paste0('(', Lower95, '-', Upper95, ')'), group=NULL, vjust=1.18),
               size=4.5) +
     
     #geom_text(data =dataForForestPlot, aes(x=dataset, y=c(-6.7,-7.3,-2.6,2.6,6.1,5.9), label=P, group=NULL),
@@ -385,7 +385,7 @@ tcgaROCForestplotFunT <- function(dataForForestPlot) {
       panel.grid.major.y = element_blank(),
       panel.border = element_blank(),
       panel.background = element_blank()) +
-    annotate(geom = 'text', x = length(dataForForestPlot$Project)+1.5, y=c(-0.7,-0.5,-0.35,-0.15),
+    annotate(geom = 'text', x = length(dataForForestPlot$Project)+1.25, y=c(-0.7,-0.5,-0.35,-0.15),
              label=c('Project','Tumor','Normal','AUC\n(95% CI)'), size=5, fontface='bold')
   return (p)
 }
@@ -782,17 +782,22 @@ kmTest <- function(exprDa, daysToDeath, vitalStatus, sep='median') {
     
     exprGroup <- DEG > thresh
     
-    sdf <- survdiff(Surv(daysToDeath, vitalStatus) ~ exprGroup)
-    pValue <- format(pchisq(sdf$chisq, length(sdf$n)-1, 
-                            lower.tail = FALSE),digits=3)
-    #p.val = 1 - pchisq(data.survdiff$chisq, length(data.survdiff$n) - 1)
-    
-    HR = (sdf$obs[2]/sdf$exp[2])/(sdf$obs[1]/sdf$exp[1])
-    upper95 = exp(log(HR) + qnorm(0.975)*sqrt(1/sdf$exp[2]+1/sdf$exp[1]))
-    lower95 = exp(log(HR) - qnorm(0.975)*sqrt(1/sdf$exp[2]+1/sdf$exp[1]))
-    
-    kmDEGs <- c(HR, lower95, upper95, pValue)
-    
+    if (length(unique(exprGroup))==1) {
+      kmDEGs <- rep(NA,4)
+    } else {
+      sdf <- survdiff(Surv(daysToDeath, vitalStatus) ~ exprGroup)
+      pValue <- format(pchisq(sdf$chisq, length(sdf$n)-1, 
+                              lower.tail = FALSE),digits=3)
+      #p.val = 1 - pchisq(data.survdiff$chisq, length(data.survdiff$n) - 1)
+      
+      HR = (sdf$obs[2]/sdf$exp[2])/(sdf$obs[1]/sdf$exp[1])
+      upper95 = exp(log(HR) + qnorm(0.975)*sqrt(1/sdf$exp[2]+1/sdf$exp[1]))
+      lower95 = exp(log(HR) - qnorm(0.975)*sqrt(1/sdf$exp[2]+1/sdf$exp[1]))
+      
+      kmDEGs <- c(HR, lower95, upper95, pValue)
+      
+    }
+
   } else {
     kmDEGs <- c()
     for (i in seq_len(nrow(exprDa))) {
@@ -810,22 +815,30 @@ kmTest <- function(exprDa, daysToDeath, vitalStatus, sep='median') {
       
       exprGroup <- DEG > thresh
       
-      sdf <- survdiff(Surv(daysToDeath, vitalStatus) ~ exprGroup)
-      pValue <- format(pchisq(sdf$chisq, length(sdf$n)-1, 
-                              lower.tail = FALSE),digits=3)
-      #p.val = 1 - pchisq(data.survdiff$chisq, length(data.survdiff$n) - 1)
-      
-      HR = (sdf$obs[2]/sdf$exp[2])/(sdf$obs[1]/sdf$exp[1])
-      upper95 = exp(log(HR) + qnorm(0.975)*sqrt(1/sdf$exp[2]+1/sdf$exp[1]))
-      lower95 = exp(log(HR) - qnorm(0.975)*sqrt(1/sdf$exp[2]+1/sdf$exp[1]))
-      
-      kmDEGs <- rbind(kmDEGs, c(HR, lower95, upper95, pValue))
+      if (length(unique(exprGroup))==1) {
+        kmDEGs <- rbind(kmDEGs, rep(NA,4))
+      } else {
+        
+        sdf <- survdiff(Surv(daysToDeath, vitalStatus) ~ exprGroup)
+        pValue <- format(pchisq(sdf$chisq, length(sdf$n)-1, 
+                                lower.tail = FALSE),digits=3)
+        #p.val = 1 - pchisq(data.survdiff$chisq, length(data.survdiff$n) - 1)
+        
+        HR = (sdf$obs[2]/sdf$exp[2])/(sdf$obs[1]/sdf$exp[1])
+        upper95 = exp(log(HR) + qnorm(0.975)*sqrt(1/sdf$exp[2]+1/sdf$exp[1]))
+        lower95 = exp(log(HR) - qnorm(0.975)*sqrt(1/sdf$exp[2]+1/sdf$exp[1]))
+        
+        kmDEGs <- rbind(kmDEGs, c(HR, lower95, upper95, pValue))
+        
+      }
       
     }
     
     rownames(kmDEGs) <- rownames(exprDa)
     colnames(kmDEGs) <- c('HR','lower95','upper95','pValue')
     kmDEGs <- data.frame(symbol=ensembl2symbolFun(rownames(exprDa)), kmDEGs)
+    
+
     #kmDEGs$FDR <- p.adjust(kmDEGs$pValue, method='fdr')
     
     #o <- order(coxphDEGs$pValue)
@@ -984,13 +997,6 @@ tcgaKMForestplotFunT <- function(dataForForestPlot) {
 
 
 
-
-
-
-
-
-
-
 KMPlotFun <- function(dataForKMPlot, sep='median', type='os') {
   
   if (sep=='1stQu') {
@@ -1011,6 +1017,33 @@ KMPlotFun <- function(dataForKMPlot, sep='median', type='os') {
     x.title <- 'Relapse-free Survival (months)'
   }  else if (group == 'mfs') {
     x.title <- 'Metastasis-free Survival (months)'
+  }
+  
+  if (length(unique(dataForKMPlot$risk.group))==1) {
+    p <- ggplot() +
+      labs(x = x.title, y = "Survival Probability")+ 
+      xlim(0, max(dataForKMPlot$os.time, na.rm = T)) + ylim(0,1) + 
+      theme_bw()+
+      theme(legend.position = 'none') +
+      theme(axis.line = element_line(colour = "black"),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            panel.border = element_rect(colour='black'),
+            panel.background = element_blank()) +
+      theme(axis.text=element_text(size=12, color = 'black', face = 'bold'), 
+            axis.title=element_text(size=16, face = 'bold')) +
+      theme(strip.text.x = element_text(size = 12, colour = "black", angle=0)) +
+      ggplot2::annotate("text",
+                        x = max(dataForKMPlot$os.time, na.rm=T)/2, y = 0.5, # x and y coordinates of the text
+                        label = 'Warning: only one group',
+                        color='red',
+                        size=5.5,
+                        fontface='bold.italic') #+
+    # ggplot2::annotate("text", 
+    #                   x = 0.6, y = 0.25, # x and y coordinates of the text
+    #                   label = paste0('P=',pvalue), size = 5)
+    
+    return (p)
   }
   
   n.high <- sum(dataForKMPlot$risk.group, na.rm=T)
@@ -1442,4 +1475,177 @@ getCCMATable <- function(project) {
   
 }
 
+
+
+survModelFun <- function(genes, model, training.geno, training.pheno) {
+  
+  # filter <- which(apply(training.geno, 2, function(v) sum(v==mean(v))==length(v)))
+  # #filter <- which(apply(training.geno, 2, sd)==0)
+  # 
+  # if (length(filter)>0) {
+  #   training.geno <- training.geno[,-filter]
+  # }
+  
+  training.geno <- as.matrix(t(training.geno))
+  #training.geno <- scale(training.geno)
+  
+  training.pheno$OS.time[training.pheno$OS.time<=0] <- 0.01
+  
+  filter <- which(is.na(training.pheno$OS) | is.na(training.pheno$OS.time))
+  
+  if (length(filter)>0) {
+    
+    training.geno <- training.geno[-filter,]
+    training.pheno <- training.pheno[-filter,]
+  }
+  
+  genes <- colnames(training.geno)
+  
+  training.bcr.time <- as.numeric(training.pheno$OS.time)
+  training.bcr.status <- as.numeric(training.pheno$OS)
+  
+  training.surv.data <- data.frame(training.geno, bcr.time=training.bcr.time, bcr.status=training.bcr.status)
+  
+  if (model=='CoxPH') {
+    
+    multi.var <- paste0(genes, collapse = '+')
+    
+    fml <- as.formula(paste0('Surv(bcr.time, bcr.status) ~ ', multi.var))
+    
+    coxtest <- coxph(fml, data = training.surv.data)
+    summcph <- summary(coxtest)
+    coeffs <- as.numeric(summcph$coefficients[,1])
+    
+  } else if (model=='Cox-Lasso') {
+    
+    alpha <- 1
+    
+    set.seed(777)
+    cv.fit <- cv.glmnet(training.geno, Surv(training.bcr.time, training.bcr.status), family="cox", maxit = 1000,
+                        alpha=alpha)
+    
+    coeffs <- coef(cv.fit, s = cv.fit$lambda.min)
+    coeffs <- as.numeric(coeffs)
+    
+  } else if (model=='Cox-Ridge') {
+    
+    alpha <- 0
+    
+    set.seed(777)
+    cv.fit <- cv.glmnet(training.geno, Surv(training.bcr.time, training.bcr.status), family="cox", maxit = 1000,
+                        alpha=alpha)
+    
+    coeffs <- coef(cv.fit, s = cv.fit$lambda.min)
+    coeffs <- as.numeric(coeffs)
+    
+  } #else if (model=='plsRcox') {
+  #   
+  #   ncomps <- 2
+  # 
+  #   pls.fit <- plsRcox(training.geno,time=training.bcr.time,event=training.bcr.status, nt=ncomps)
+  #   
+  # }
+  
+  coeffs <- data.frame(ID=genes, Name=NA, Coefficients=coeffs, stringsAsFactors = F)
+  
+  return (coeffs)
+  
+}
+
+
+
+ModelKMPlotFun <- function(dataForKMPlot, sep='median', type='rfs', 
+                      score.type='expr', x.adjust=0, dt) {
+  
+  if (sep=='1stQu') {
+    risk.threshold <- as.numeric(summary(dataForKMPlot$expr)[2])
+  } else if (sep=='median') {
+    risk.threshold <- as.numeric(summary(dataForKMPlot$expr)[3])
+  } else if (sep=='mean') {
+    risk.threshold <- as.numeric(summary(dataForKMPlot$expr)[4])
+  } else if (sep=='3rdQu') {
+    risk.threshold <- as.numeric(summary(dataForKMPlot$expr)[5])
+  }
+  
+  dataForKMPlot$risk.group <- dataForKMPlot$expr > risk.threshold
+  
+  if (type == 'os') {
+    x.title <- 'Overall Survival (months)'
+  } else if (type == 'rfs') {
+    x.title <- 'Relapse-free Survival (months)'
+  }  else if (type == 'mfs') {
+    x.title <- 'Metastasis-free Survival (months)'
+  }
+  
+  n.high <- sum(dataForKMPlot$risk.group, na.rm=T)
+  n.low <- sum(!dataForKMPlot$risk.group, na.rm=T)
+  
+  sdf <- survdiff(Surv(dataForKMPlot$time.to.bcr, dataForKMPlot$bcr.status) ~ dataForKMPlot$risk.group)
+  p.val <- pchisq(sdf$chisq, length(sdf$n)-1, lower.tail = FALSE)
+  #p.val = 1 - pchisq(data.survdiff$chisq, length(data.survdiff$n) - 1)
+  
+  hr = (sdf$obs[2]/sdf$exp[2])/(sdf$obs[1]/sdf$exp[1])
+  upper95 = exp(log(hr) + qnorm(0.975)*sqrt(1/sdf$exp[2]+1/sdf$exp[1]))
+  lower95 = exp(log(hr) - qnorm(0.975)*sqrt(1/sdf$exp[2]+1/sdf$exp[1]))
+  
+  hr <- format(hr, digits = 2, nsmall=2)
+  upper95 <- format(upper95, digits = 2, nsmall=2)
+  lower95 <- format(lower95, digits = 2, nsmall=2)
+  
+  p.val <- ifelse(p.val >= 0.01, formatC(p.val, digits = 2), 
+                  formatC(p.val, format = "e", digits = 2))
+  
+  label.hr <- paste('HR = ', hr, ' (', lower95, ' - ', upper95, ')', sep='')
+  label.p <- paste('P Value = ', p.val, sep='')
+  
+  fit <- survfit(Surv(time.to.bcr, bcr.status) ~ risk.group, data=dataForKMPlot)
+  
+  lgd.xpos <- 0.32+x.adjust
+  lgd.ypos = 0.22
+  
+  p.xpos = max(dataForKMPlot$time.to.bcr, na.rm=TRUE)/50
+  p.ypos = 0.05
+  
+  #title <- 'PFR10YR'
+  #type <- 'Relapse-free Survival'
+  
+  if (score.type=='expr') {
+    legend.labs <- c(paste('Low Expression (N=',n.low,')',sep=''), 
+                     paste('High Expression (N=',n.high,')',sep=''))
+  } else {
+    legend.labs <- c(paste('Low Risk (N=',n.low,')',sep=''), 
+                     paste('High Risk (N=',n.high,')',sep=''))
+  }
+  
+  
+  
+  plt <- ggsurvplot(fit, data=dataForKMPlot, pval = paste0(label.hr, '\n', label.p), pval.coord = c(p.xpos, p.ypos),
+                    pval.size=4.2,
+                    font.main = c(16, 'bold', 'black'), conf.int = FALSE, 
+                    title = dt,
+                    legend = c(lgd.xpos, lgd.ypos), 
+                    #color = c('blue', 'green'),
+                    palette= c(google.blue, google.red),
+                    legend.labs = legend.labs,  
+                    legend.title='', # Group
+                    xlab = x.title, ylab = 'Survival Probability',
+                    font.x = c(14), font.y = c(14), ylim=c(0,1), #20
+                    ggtheme = theme_bw()+ theme(axis.line = element_line(colour = "black"),
+                                                panel.grid.major = element_blank(),
+                                                panel.grid.minor = element_blank(),
+                                                #panel.border = element_rect(colour='black'),
+                                                panel.border = element_blank(),
+                                                panel.background = element_blank(),
+                                                legend.text = element_text(size=12),#16
+                                                legend.title = element_blank(), # 16
+                                                legend.key = element_blank(),
+                                                #legend.box.background = element_blank(),
+                                                legend.background = element_blank(),
+                                                plot.title = element_text(size = 16, face = 'bold', hjust = 0.5),
+                                                axis.title = element_text(size = 14, face = 'bold'),
+                                                axis.text = element_text(size=12, color='black', face = 'bold'))) # 18
+  
+  return(plt[[1]])
+  
+}
 
